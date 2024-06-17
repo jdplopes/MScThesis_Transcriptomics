@@ -38,6 +38,7 @@ dir.create("Blast_Drerio/Plots/PieCharts - All GO terms")
 dir.create("Blast_Drerio/Plots/PieCharts - Top 10 terms")
 dir.create("Blast_Drerio/Plots/Horizontal Barplots - Top 10 terms")
 dir.create("Blast_Drerio/Plots/PieCharts - Pathways")
+dir.create("Blast_Drerio/Plots/Dotplot")
 
 dir.create("Blast_SwissProt")
 dir.create("Blast_SwissProt/Files")
@@ -78,6 +79,7 @@ pathwissPieAllGOterms_BDrerio <- "Blast_Drerio/Plots/PieCharts - All GO terms/"
 pathPieTop10GOterms_BDrerio <- "Blast_Drerio/Plots/PieCharts - Top 10 terms/"
 pathwissHBarplotGOterms_BDrerio <- "Blast_Drerio/Plots/Horizontal Barplots - Top 10 terms/"
 pathPiePathways_BDrerio <- "Blast_Drerio/Plots/PieCharts - Pathways/"
+pathDotplot <- "Blast_Drerio/Plots/Dotplot/"
 
 #######################################Functions#######################################
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
@@ -384,8 +386,11 @@ Blast_drerio <- subset(Blast_drerio, grepl("^TRINITY", Blast_drerio[,1]))
 Blast_drerio$ID<-unlist(sapply(Blast_drerio$TrinityID, function(x) unlist(strsplit(x, ".", fixed = TRUE))[1]))
 blast_drerio_trinity_merge<-merge(Blast_drerio,Counts, by = "ID")
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:16)]
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-2]
-Full_blast_drerio<-merge(blast_drerio_trinity_merge, TxSEQ, by="ID")
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-c(1,2)]
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge %>%
+  group_by(Accession) %>%
+  summarize(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+#Full_blast_drerio<-merge(blast_drerio_trinity_merge, TxSEQ, by="ID")
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 ####################Merge the counts with the respective cDNA sequence#################
@@ -508,6 +513,139 @@ write.table(deg_per_treatment_trinity,paste(pathTables_Trinity,"DEG_per_treatmen
 
 
 
+################################Statistics (with blast)################################
+#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
+#VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV#
+
+##Create a DGEList object from a table of counts 
+Data_blast <-
+  DGEList(counts = Full_blast[, 2:16],
+          group = Levels,
+          genes = Full_blast[, 1])
+################################################
+
+##Filter out lowly expressed genes
+keep_blast <- filterByExpr(Data_blast)
+Data_blast <- Data_blast[keep_blast, , keep.lib.sizes=FALSE]
+##################################
+
+##Calculate the normalization factors
+Data_blast <- calcNormFactors(Data_blast)
+#####################################
+
+##Create the generalized linear models for comparing the expression levels from the different treatments
+Design_blast <- model.matrix( ~ 0 + Levels, data = Data_blast$samples)
+colnames(Design_blast) <- levels(Data_blast$samples$group)
+Data_blast <- estimateDisp(Data_blast, Design_blast)
+fit_blast <- glmFit(Data_blast, Design_blast)
+########################################################################################################
+
+##Expression levels between the treatments
+CTL_10vMHW2_10_blast<-relativeExpression(colnames(Design_blast)[1],colnames(Design_blast)[4],Design_blast,fit_blast)
+MHW2_10vMHW2_25_blast<-relativeExpression(colnames(Design_blast)[4],colnames(Design_blast)[5],Design_blast,fit_blast)
+CTL_25vMHW1_25_blast<-relativeExpression(colnames(Design_blast)[2],colnames(Design_blast)[3],Design_blast,fit_blast)
+CTL_25vMHW2_25_blast<-relativeExpression(colnames(Design_blast)[2],colnames(Design_blast)[5],Design_blast,fit_blast)
+MHW1_25vMHW2_25_blast<-relativeExpression(colnames(Design_blast)[3],colnames(Design_blast)[5],Design_blast,fit_blast)
+##########################################
+
+##Merge the logFC,logCPM,LR and pvalue with the trinity ids
+Results_blast<-cbind(Data_blast$genes, CTL_10vMHW2_10_blast$table, MHW2_10vMHW2_25_blast$table, CTL_25vMHW1_25_blast$table, CTL_25vMHW2_25_blast$table, MHW1_25vMHW2_25_blast$table)
+colnames(Results_blast)<-c(
+  "ID",
+  "logFC-CTL_10vMHW2_10",
+  "logCPM-CTL_10vMHW2_10",
+  "LR-CTL_10vMHW2_10",
+  "FDRp-CTL_10vMHW2_10",
+  "logFC-MHW2_10vMHW2_25",
+  "logCPM-MHW2_10vMHW2_25",
+  "LR-MHW2_10vMHW2_25",
+  "FDRp-MHW2_10vMHW2_25",
+  "logFC-CTL_25vMHW1_25",
+  "logCPM-CTL_25vMHW1_25",
+  "LR-CTL_25vMHW1_25",
+  "FDRp-CTL_25vMHW1_25",
+  "logFC-CTL_25vMHW2_25",
+  "logCPM-CTL_25vMHW2_25",
+  "LR-CTL_25vMHW2_25",
+  "FDRp-CTL_25vMHW2_25",
+  "logFC-MHW1_25vMHW2_25",
+  "logCPM-MHW1_25vMHW2_25",
+  "LR-MHW1_25vMHW2_25",
+  "FDRp-MHW1_25vMHW2_25"
+)
+head(Results_blast)
+write.table(Results_blast,paste(pathFiles_BSwiss,"Results.csv",sep =""), sep=";",col.names=NA)
+#######################################
+
+##Calculating the nº of DEGs in general 
+expressionTable_blast<-decideTests(Results_blast[,grepl("FDRp", colnames(Results_blast))],coefficients = Results_blast[,grepl("logFC", colnames(Results_blast))], adjust.method = "fdr", lfc = 1.5)
+expressionTable_blast<-as.data.frame(expressionTable_blast)
+head(expressionTable_blast)
+colnames(expressionTable_blast)<-c("CTL_10vMHW2_10", "MHW2_10vMHW2_25", "CTL_25vMHW1_25","CTL_25vMHW2_25","MHW1_25vMHW2_25")
+DEG_blast<-cbind(Results_blast,expressionTable_blast)
+degTable_blast<-DEG_blast[which(abs(DEG_blast$CTL_10vMHW2_10) == 1 | abs(DEG_blast$MHW2_10vMHW2_25) == 1 | abs(DEG_blast$CTL_25vMHW1_25) == 1 | abs(DEG_blast$CTL_25vMHW2_25) == 1 | abs(DEG_blast$MHW1_25vMHW2_25) == 1),]
+head(degTable_blast)
+nrow(degTable_blast)
+write.table(degTable_blast,paste(pathFiles_BSwiss,"DEG.csv",sep =""),sep=";",col.names=NA)
+save(CTL_10vMHW2_10_blast, MHW2_10vMHW2_25_blast, CTL_25vMHW1_25_blast, CTL_25vMHW2_25_blast, MHW1_25vMHW2_25_blast, file = "Blast_SwissProt\\Files\\lrt.RData")
+#######################################
+
+##Nº of DEGs per treatment
+DEG_CTL_10vMHW2_10_blast<-sum(degTable_blast$CTL_10vMHW2_10 != 0);DEG_CTL_10vMHW2_10_blast
+DEG_MHW2_10vMHW2_25_blast<-sum(degTable_blast$MHW2_10vMHW2_25 != 0);DEG_MHW2_10vMHW2_25_blast
+DEG_CTL_25vMHW2_25_blast<-sum(degTable_blast$CTL_25vMHW2_25 != 0);DEG_CTL_25vMHW2_25_blast
+DEG_CTL_25vMHW1_25_blast<-sum(degTable_blast$CTL_25vMHW1_25 != 0);DEG_CTL_25vMHW1_25_blast
+DEG_MHW1_25vMHW2_25_blast<-sum(degTable_blast$MHW1_25vMHW2_25 != 0);DEG_MHW1_25vMHW2_25_blast
+##########################
+
+##Nº of overexpressed ORFs in treatment 2
+oedeg_CTL_10vMHW2_10_blast<-sum(degTable_blast$CTL_10vMHW2_10 == -1);oedeg_CTL_10vMHW2_10_blast
+oedeg_MHW2_10vMHW2_25_blast<-sum(degTable_blast$MHW2_10vMHW2_25 == -1);oedeg_MHW2_10vMHW2_25_blast
+oedeg_CTL_25vMHW2_25_blast<-sum(degTable_blast$CTL_25vMHW2_25 == -1);oedeg_CTL_25vMHW2_25_blast
+oedeg_CTL_25vMHW1_25_blast<-sum(degTable_blast$CTL_25vMHW1_25 == -1);oedeg_CTL_25vMHW1_25_blast
+oedeg_MHW1_25vMHW2_25_blast<-sum(degTable_blast$MHW1_25vMHW2_25 == -1);oedeg_MHW1_25vMHW2_25_blast
+#############################################
+
+##Nº of underexpressed ORFs in treatment 2 
+uedeg_CTL_10vMHW2_10_blast<-sum(degTable_blast$CTL_10vMHW2_10 == 1);uedeg_CTL_10vMHW2_10_blast
+uedeg_MHW2_10vMHW2_25_blast<-sum(degTable_blast$MHW2_10vMHW2_25 == 1);uedeg_MHW2_10vMHW2_25_blast
+uedeg_CTL_25vMHW2_25_blast<-sum(degTable_blast$CTL_25vMHW2_25 == 1);uedeg_CTL_25vMHW2_25_blast
+uedeg_CTL_25vMHW1_25_blast<-sum(degTable_blast$CTL_25vMHW1_25 == 1);uedeg_CTL_25vMHW1_25_blast
+uedeg_MHW1_25vMHW2_25_blast<-sum(degTable_blast$MHW1_25vMHW2_25 == 1);uedeg_MHW1_25vMHW2_25_blast
+############################################
+
+##Table with total DEG, underexpressed genes and overexpressed genes per treatment
+deg_per_treatment_blast <- data.frame(Treatments = contrasts, 
+                                      No_of_Genes = c(DEG_CTL_10vMHW2_10_blast,DEG_CTL_25vMHW1_25_blast,DEG_CTL_25vMHW2_25_blast,DEG_MHW1_25vMHW2_25_blast,DEG_MHW2_10vMHW2_25_blast),
+                                      No_of_overexpressed_Genes = c(oedeg_CTL_10vMHW2_10_blast,oedeg_CTL_25vMHW1_25_blast,oedeg_CTL_25vMHW2_25_blast,oedeg_MHW1_25vMHW2_25_blast,oedeg_MHW2_10vMHW2_25_blast),
+                                      No_of_underexpressed_Genes = c(uedeg_CTL_10vMHW2_10_blast,uedeg_CTL_25vMHW1_25_blast,uedeg_CTL_25vMHW2_25_blast,uedeg_MHW1_25vMHW2_25_blast,uedeg_MHW2_10vMHW2_25_blast))
+colnames(deg_per_treatment_blast) <- c("Treatments","transcripts with differential expression","Overexpressed in treatment 2","Underexpressed in treatment 2")
+write.table(deg_per_treatment_blast,paste(pathTables_BSwiss,"DEG_per_treatment_blast.csv",sep =""),sep=";",col.names=NA)
+########################################################################################
+
+##Table with nº of transcripts, nº of ORFs, nº of differential expressed transcripts and nº of ORFs with differential expression
+transdecoder_n_transcripts <- grepl("^>", TransDecoder$V1)
+transdecoder_filtered <- subset(TransDecoder, transdecoder_n_transcripts)
+p_ORFs <- round((nrow(transdecoder_filtered)*100)/nrow(TxSEQ),3)
+p_annotated_ORFs <- round((nrow(Blast)*100)/nrow(TxSEQ),3)
+p_DETranscripts <- round((nrow(degTable_trinity)*100)/nrow(TxSEQ),3)
+p_DEORFs <- round((nrow(degTable_blast)*100)/nrow(TxSEQ),3)
+percentages <- c(100,p_ORFs,p_annotated_ORFs,p_DETranscripts,p_DEORFs)
+percentages <- paste0(percentages, "%")
+transcripts_of_interest <- data.frame(Stage = c(1,2,3,4,5),
+                                      Objective = c("Transcriptome assembly","Transcripts with coding regions","Functional annotation","Differentially-Expressed Transcripts","ORFs with Differential Expression"),
+                                      Specie = c(nrow(TxSEQ),nrow(transdecoder_filtered),nrow(Blast),nrow(degTable_trinity),nrow(degTable_blast)),
+                                      Percentagens = percentages)
+colnames(transcripts_of_interest) <- c("Analytical stage","Stage objective","Transcripts","Percentages")
+write.table(transcripts_of_interest,paste(pathTables_BSwiss,"transcripts_of_interest.csv",sep =""),sep=";",col.names=NA)
+################################################################################################################################
+
+#ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
+#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
+################################Statistics (with blast)################################
+
+
+
 #############################Statistics (with blast_drerio)############################
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 #VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV#
@@ -624,176 +762,28 @@ write.table(deg_drerio_per_treatment,paste(pathTables_BSwiss,"DEG_per_treatment.
 
 
 
-################################Statistics (with blast)################################
-#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
-#VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV#
-
-##Create a DGEList object from a table of counts 
-Data_blast <-
-  DGEList(counts = Full_blast[, 2:16],
-          group = Levels,
-          genes = Full_blast[, 1])
-################################################
-
-##Filter out lowly expressed genes
-keep_blast <- filterByExpr(Data_blast)
-Data_blast <- Data_blast[keep_blast, , keep.lib.sizes=FALSE]
-##################################
-
-##Calculate the normalization factors
-Data_blast <- calcNormFactors(Data_blast)
-#####################################
-
-##Create the generalized linear models for comparing the expression levels from the different treatments
-Design_blast <- model.matrix( ~ 0 + Levels, data = Data_blast$samples)
-colnames(Design_blast) <- levels(Data_blast$samples$group)
-Data_blast <- estimateDisp(Data_blast, Design_blast)
-fit_blast <- glmFit(Data_blast, Design_blast)
-########################################################################################################
-
-##Expression levels between the treatments
-CTL_10vMHW2_10_blast<-relativeExpression(colnames(Design_blast)[1],colnames(Design_blast)[4],Design_blast,fit_blast)
-MHW2_10vMHW2_25_blast<-relativeExpression(colnames(Design_blast)[4],colnames(Design_blast)[5],Design_blast,fit_blast)
-CTL_25vMHW1_25_blast<-relativeExpression(colnames(Design_blast)[2],colnames(Design_blast)[3],Design_blast,fit_blast)
-CTL_25vMHW2_25_blast<-relativeExpression(colnames(Design_blast)[2],colnames(Design_blast)[5],Design_blast,fit_blast)
-MHW1_25vMHW2_25_blast<-relativeExpression(colnames(Design_blast)[3],colnames(Design_blast)[5],Design_blast,fit_blast)
-##########################################
-
-##Merge the logFC,logCPM,LR and pvalue with the trinity ids
-Results_blast<-cbind(Data_blast$genes, CTL_10vMHW2_10_blast$table, MHW2_10vMHW2_25_blast$table, CTL_25vMHW1_25_blast$table, CTL_25vMHW2_25_blast$table, MHW1_25vMHW2_25_blast$table)
-colnames(Results_blast)<-c(
-  "ID",
-  "logFC-CTL_10vMHW2_10",
-  "logCPM-CTL_10vMHW2_10",
-  "LR-CTL_10vMHW2_10",
-  "FDRp-CTL_10vMHW2_10",
-  "logFC-MHW2_10vMHW2_25",
-  "logCPM-MHW2_10vMHW2_25",
-  "LR-MHW2_10vMHW2_25",
-  "FDRp-MHW2_10vMHW2_25",
-  "logFC-CTL_25vMHW1_25",
-  "logCPM-CTL_25vMHW1_25",
-  "LR-CTL_25vMHW1_25",
-  "FDRp-CTL_25vMHW1_25",
-  "logFC-CTL_25vMHW2_25",
-  "logCPM-CTL_25vMHW2_25",
-  "LR-CTL_25vMHW2_25",
-  "FDRp-CTL_25vMHW2_25",
-  "logFC-MHW1_25vMHW2_25",
-  "logCPM-MHW1_25vMHW2_25",
-  "LR-MHW1_25vMHW2_25",
-  "FDRp-MHW1_25vMHW2_25"
-)
-head(Results_blast)
-write.table(Results_blast,paste(pathFiles_BSwiss,"Results.csv",sep =""), sep=";",col.names=NA)
-#######################################
-
-##Calculating the nº of DEGs in general 
-expressionTable_blast<-decideTests(Results_blast[,grepl("FDRp", colnames(Results_blast))],coefficients = Results_blast[,grepl("logFC", colnames(Results_blast))], adjust.method = "fdr", lfc = 1.5)
-expressionTable_blast<-as.data.frame(expressionTable_blast)
-head(expressionTable_blast)
-colnames(expressionTable_blast)<-c("CTL_10vMHW2_10", "MHW2_10vMHW2_25", "CTL_25vMHW1_25","CTL_25vMHW2_25","MHW1_25vMHW2_25")
-DEG_blast<-cbind(Results_blast,expressionTable_blast)
-degTable_blast<-DEG_blast[which(abs(DEG_blast$CTL_10vMHW2_10) == 1 | abs(DEG_blast$MHW2_10vMHW2_25) == 1 | abs(DEG_blast$CTL_25vMHW1_25) == 1 | abs(DEG_blast$CTL_25vMHW2_25) == 1 | abs(DEG_blast$MHW1_25vMHW2_25) == 1),]
-head(degTable_blast)
-nrow(degTable_blast)
-write.table(degTable_blast,paste(pathFiles_BSwiss,"DEG.csv",sep =""),sep=";",col.names=NA)
-save(CTL_10vMHW2_10_blast, MHW2_10vMHW2_25_blast, CTL_25vMHW1_25_blast, CTL_25vMHW2_25_blast, MHW1_25vMHW2_25_blast, file = "Blast_SwissProt\\Files\\lrt.RData")
-#######################################
-
-##Nº of DEGs per treatment
-DEG_CTL_10vMHW2_10_blast<-sum(degTable_blast$CTL_10vMHW2_10 != 0);DEG_CTL_10vMHW2_10_blast
-DEG_MHW2_10vMHW2_25_blast<-sum(degTable_blast$MHW2_10vMHW2_25 != 0);DEG_MHW2_10vMHW2_25_blast
-DEG_CTL_25vMHW2_25_blast<-sum(degTable_blast$CTL_25vMHW2_25 != 0);DEG_CTL_25vMHW2_25_blast
-DEG_CTL_25vMHW1_25_blast<-sum(degTable_blast$CTL_25vMHW1_25 != 0);DEG_CTL_25vMHW1_25_blast
-DEG_MHW1_25vMHW2_25_blast<-sum(degTable_blast$MHW1_25vMHW2_25 != 0);DEG_MHW1_25vMHW2_25_blast
-##########################
-
-##Nº of overexpressed ORFs in treatment 2
-oedeg_CTL_10vMHW2_10_blast<-sum(degTable_blast$CTL_10vMHW2_10 == -1);oedeg_CTL_10vMHW2_10_blast
-oedeg_MHW2_10vMHW2_25_blast<-sum(degTable_blast$MHW2_10vMHW2_25 == -1);oedeg_MHW2_10vMHW2_25_blast
-oedeg_CTL_25vMHW2_25_blast<-sum(degTable_blast$CTL_25vMHW2_25 == -1);oedeg_CTL_25vMHW2_25_blast
-oedeg_CTL_25vMHW1_25_blast<-sum(degTable_blast$CTL_25vMHW1_25 == -1);oedeg_CTL_25vMHW1_25_blast
-oedeg_MHW1_25vMHW2_25_blast<-sum(degTable_blast$MHW1_25vMHW2_25 == -1);oedeg_MHW1_25vMHW2_25_blast
-#############################################
-
-##Nº of underexpressed ORFs in treatment 2 
-uedeg_CTL_10vMHW2_10_blast<-sum(degTable_blast$CTL_10vMHW2_10 == 1);uedeg_CTL_10vMHW2_10_blast
-uedeg_MHW2_10vMHW2_25_blast<-sum(degTable_blast$MHW2_10vMHW2_25 == 1);uedeg_MHW2_10vMHW2_25_blast
-uedeg_CTL_25vMHW2_25_blast<-sum(degTable_blast$CTL_25vMHW2_25 == 1);uedeg_CTL_25vMHW2_25_blast
-uedeg_CTL_25vMHW1_25_blast<-sum(degTable_blast$CTL_25vMHW1_25 == 1);uedeg_CTL_25vMHW1_25_blast
-uedeg_MHW1_25vMHW2_25_blast<-sum(degTable_blast$MHW1_25vMHW2_25 == 1);uedeg_MHW1_25vMHW2_25_blast
-############################################
-
-##Table with total DEG, underexpressed genes and overexpressed genes per treatment
-deg_per_treatment_blast <- data.frame(Treatments = contrasts, 
-                                        No_of_Genes = c(DEG_CTL_10vMHW2_10_blast,DEG_CTL_25vMHW1_25_blast,DEG_CTL_25vMHW2_25_blast,DEG_MHW1_25vMHW2_25_blast,DEG_MHW2_10vMHW2_25_blast),
-                                        No_of_overexpressed_Genes = c(oedeg_CTL_10vMHW2_10_blast,oedeg_CTL_25vMHW1_25_blast,oedeg_CTL_25vMHW2_25_blast,oedeg_MHW1_25vMHW2_25_blast,oedeg_MHW2_10vMHW2_25_blast),
-                                        No_of_underexpressed_Genes = c(uedeg_CTL_10vMHW2_10_blast,uedeg_CTL_25vMHW1_25_blast,uedeg_CTL_25vMHW2_25_blast,uedeg_MHW1_25vMHW2_25_blast,uedeg_MHW2_10vMHW2_25_blast))
-colnames(deg_per_treatment_blast) <- c("Treatments","transcripts with differential expression","Overexpressed in treatment 2","Underexpressed in treatment 2")
-write.table(deg_per_treatment_blast,paste(pathTables_BSwiss,"DEG_per_treatment_blast.csv",sep =""),sep=";",col.names=NA)
-########################################################################################
-
-##Table with nº of transcripts, nº of ORFs, nº of differential expressed transcripts and nº of ORFs with differential expression
-transdecoder_n_transcripts <- grepl("^>", TransDecoder$V1)
-transdecoder_filtered <- subset(TransDecoder, transdecoder_n_transcripts)
-p_ORFs <- round((nrow(transdecoder_filtered)*100)/nrow(TxSEQ),3)
-p_annotated_ORFs <- round((nrow(Blast)*100)/nrow(TxSEQ),3)
-p_DETranscripts <- round((nrow(degTable_trinity)*100)/nrow(TxSEQ),3)
-p_DEORFs <- round((nrow(degTable_blast)*100)/nrow(TxSEQ),3)
-percentages <- c(100,p_ORFs,p_annotated_ORFs,p_DETranscripts,p_DEORFs)
-percentages <- paste0(percentages, "%")
-transcripts_of_interest <- data.frame(Stage = c(1,2,3,4,5),
-                                      Objective = c("Transcriptome assembly","Transcripts with coding regions","Functional annotation","Differentially-Expressed Transcripts","ORFs with Differential Expression"),
-                                      Specie = c(nrow(TxSEQ),nrow(transdecoder_filtered),nrow(Blast),nrow(degTable_trinity),nrow(degTable_blast)),
-                                      Percentagens = percentages)
-colnames(transcripts_of_interest) <- c("Analytical stage","Stage objective","Transcripts","Percentages")
-write.table(transcripts_of_interest,paste(pathTables_BSwiss,"transcripts_of_interest.csv",sep =""),sep=";",col.names=NA)
-################################################################################################################################
-
-#ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
-#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
-################################Statistics (with blast)################################
-
-
-
 ####################################Pathway analysis###################################
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 #VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV#
 
-#Talvez utilizar os accession code em vez de genes names
-
 DEG_pathway <- DEG_blast_drerio[-c(22:26)]
-sum(duplicated(DEG_blast_drerio$ID)) #23343 duplicated
 DEG_pathway$ID <- str_extract(DEG_pathway$ID, "\\|([^|]+)\\|") %>%
   str_replace_all("\\|", "")
-DEG_pathway <- DEG_pathway %>%##Calculate mean for duplicateds
-  group_by(ID) %>%
-  summarize(across(everything(), \(x) mean(x, na.rm = TRUE)))
 
-##Get gene names
-my_protein_ids <- DEG_pathway$ID
-library(UniProt.ws)
-genes_names <- mapUniProt("UniProtKB_AC-ID", "UniProtKB", query = my_protein_ids)
-genes_names$Gene.Names <- sub(" .*", "", genes_names$Gene.Names)
-colnames(genes_names)[1] <- "ID"
-DEG_pathway_gn <- merge(DEG_pathway,genes_names, by = "ID")
-DEG_pathway_gn <- DEG_pathway_gn[1:22]
-
-##Create data frames with Accession, logFC and Pvalue for the pathway analysis (all drerio genes)
-allg_CTL_10vMHW2_10<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-CTL_10vMHW2_10`,DEG_pathway$`FDRp-CTL_10vMHW2_10`)
+##Create data frames with Accession, logFC and Pvalue for the pathway analysis
+allg_CTL_10vMHW2_10<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_10vMHW2_10`,DEG_pathway$`FDRp-CTL_10vMHW2_10`)
 names(allg_CTL_10vMHW2_10) <- c("Accession","logFC","Pvalue")
 
-allg_CTL_25vMHW1_25<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-CTL_25vMHW1_25`,DEG_pathway$`FDRp-CTL_25vMHW1_25`)
+allg_CTL_25vMHW1_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_25vMHW1_25`,DEG_pathway$`FDRp-CTL_25vMHW1_25`)
 names(allg_CTL_25vMHW1_25) <- c("Accession","logFC","Pvalue")
 
-allg_CTL_25vMHW2_25<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-CTL_25vMHW2_25`,DEG_pathway$`FDRp-CTL_25vMHW2_25`)
+allg_CTL_25vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_25vMHW2_25`,DEG_pathway$`FDRp-CTL_25vMHW2_25`)
 names(allg_CTL_25vMHW2_25) <- c("Accession","logFC","Pvalue")
 
-allg_MHW1_25vMHW2_25<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-MHW1_25vMHW2_25`,DEG_pathway$`FDRp-MHW1_25vMHW2_25`)
+allg_MHW1_25vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-MHW1_25vMHW2_25`,DEG_pathway$`FDRp-MHW1_25vMHW2_25`)
 names(allg_MHW1_25vMHW2_25) <- c("Accession","logFC","Pvalue")
 
-allg_MHW2_10vMHW2_25<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-MHW2_10vMHW2_25`,DEG_pathway$`FDRp-MHW2_10vMHW2_25`)
+allg_MHW2_10vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-MHW2_10vMHW2_25`,DEG_pathway$`FDRp-MHW2_10vMHW2_25`)
 names(allg_MHW2_10vMHW2_25) <- c("Accession","logFC","Pvalue")
 ############################################################################
 
@@ -836,7 +826,7 @@ head(odataMHW2_10vMHW2_25$transcriptome)
 ##Select the databases we want to query and download pathway definitions
 databases <- c("kegg")
 pathways <- getMultiOmicsFeatures(dbs = databases, layer = layers,
-                                  returnProteome = "UNIPROT",
+                                  returnTranscriptome = "UNIPROT",
                                   organism = "drerio",
                                   useLocal =  FALSE)
 pathways_short <- lapply(names(pathways), function(name) {
@@ -849,50 +839,58 @@ pathways$transcriptome[8]
 
 ##Run the pathway enrichment
 enrichment_scoresCTL_10vMHW2_10 <- multiGSEA(pathways,odataCTL_10vMHW2_10)
-Tenrichment_scoresCTL_10vMHW2_10 <- as.data.frame(enrichment_scoresCTL_10vMHW2_10$proteome)
+Tenrichment_scoresCTL_10vMHW2_10 <- as.data.frame(enrichment_scoresCTL_10vMHW2_10$transcriptome)
 Tenrichment_scoresCTL_10vMHW2_10$leadingEdge <- sapply(Tenrichment_scoresCTL_10vMHW2_10$leadingEdge, function(x) paste(x, collapse = ";"))
-write.table(Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
+#write.table(Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
 sig_Tenrichment_scoresCTL_10vMHW2_10 <- Tenrichment_scoresCTL_10vMHW2_10[Tenrichment_scoresCTL_10vMHW2_10$pval < 0.05, ]
 sig_Tenrichment_scoresCTL_10vMHW2_10$contrast <- rep("CTL_10vMHW2_10")
-write.table(sig_Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"sig_enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
+sig_Tenrichment_scoresCTL_10vMHW2_10 <- sig_Tenrichment_scoresCTL_10vMHW2_10[order(sig_Tenrichment_scoresCTL_10vMHW2_10$pval), ]
+top_10_esCTL_10vMHW2_10 <- head(sig_Tenrichment_scoresCTL_10vMHW2_10,10)
+#write.table(sig_Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"sig_enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresCTL_25vMHW1_25 <- multiGSEA(pathways,odataCTL_25vMHW1_25)
-Tenrichment_scoresCTL_25vMHW1_25 <- as.data.frame(enrichment_scoresCTL_25vMHW1_25$proteome)
+Tenrichment_scoresCTL_25vMHW1_25 <- as.data.frame(enrichment_scoresCTL_25vMHW1_25$transcriptome)
 Tenrichment_scoresCTL_25vMHW1_25$leadingEdge <- sapply(Tenrichment_scoresCTL_25vMHW1_25$leadingEdge, function(x) paste(x, collapse = ";"))
-write.table(Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
+#write.table(Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
 sig_Tenrichment_scoresCTL_25vMHW1_25 <- Tenrichment_scoresCTL_25vMHW1_25[Tenrichment_scoresCTL_25vMHW1_25$pval < 0.05, ]
 sig_Tenrichment_scoresCTL_25vMHW1_25$contrast <- rep("CTL_25vMHW1_25")
-write.table(sig_Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"sig_enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
+sig_Tenrichment_scoresCTL_25vMHW1_25 <- sig_Tenrichment_scoresCTL_25vMHW1_25[order(sig_Tenrichment_scoresCTL_25vMHW1_25$pval), ]
+top_10_esCTL_25vMHW1_25 <- head(sig_Tenrichment_scoresCTL_25vMHW1_25,10)
+#write.table(sig_Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"sig_enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresCTL_25vMHW2_25 <- multiGSEA(pathways,odataCTL_25vMHW2_25)
-Tenrichment_scoresCTL_25vMHW2_25 <- as.data.frame(enrichment_scoresCTL_25vMHW2_25$proteome)
+Tenrichment_scoresCTL_25vMHW2_25 <- as.data.frame(enrichment_scoresCTL_25vMHW2_25$transcriptome)
 Tenrichment_scoresCTL_25vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresCTL_25vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
-write.table(Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+#write.table(Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 sig_Tenrichment_scoresCTL_25vMHW2_25 <- Tenrichment_scoresCTL_25vMHW2_25[Tenrichment_scoresCTL_25vMHW2_25$pval < 0.05, ]
 sig_Tenrichment_scoresCTL_25vMHW2_25$contrast <- rep("CTL_25vMHW2_25")
-write.table(sig_Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"sig_enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+sig_Tenrichment_scoresCTL_25vMHW2_25 <- sig_Tenrichment_scoresCTL_25vMHW2_25[order(sig_Tenrichment_scoresCTL_25vMHW2_25$pval), ]
+top_10_esCTL_25vMHW2_25 <- head(sig_Tenrichment_scoresCTL_25vMHW2_25,10)
+#write.table(sig_Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"sig_enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresMHW1_25vMHW2_25 <- multiGSEA(pathways,odataMHW1_25vMHW2_25)
-enrichment_scoresMHW1_25vMHW2_25$proteome
-Tenrichment_scoresMHW1_25vMHW2_25 <- as.data.frame(enrichment_scoresMHW1_25vMHW2_25$proteome)
+Tenrichment_scoresMHW1_25vMHW2_25 <- as.data.frame(enrichment_scoresMHW1_25vMHW2_25$transcriptome)
 Tenrichment_scoresMHW1_25vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresMHW1_25vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
-write.table(Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"enrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+#write.table(Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"enrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 sig_Tenrichment_scoresMHW1_25vMHW2_25 <- Tenrichment_scoresMHW1_25vMHW2_25[Tenrichment_scoresMHW1_25vMHW2_25$pval < 0.05, ]
 sig_Tenrichment_scoresMHW1_25vMHW2_25$contrast <- rep("MHW1_25vMHW2_25")
-write.table(sig_Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"sig_Tenrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+sig_Tenrichment_scoresMHW1_25vMHW2_25 <- sig_Tenrichment_scoresMHW1_25vMHW2_25[order(sig_Tenrichment_scoresMHW1_25vMHW2_25$pval), ]
+top_10_esMHW1_25vMHW2_25 <- head(sig_Tenrichment_scoresMHW1_25vMHW2_25,10)
+#write.table(sig_Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"sig_Tenrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresMHW2_10vMHW2_25 <- multiGSEA(pathways,odataMHW2_10vMHW2_25)
-enrichment_scoresMHW2_10vMHW2_25$proteome
-Tenrichment_scoresMHW2_10vMHW2_25 <- as.data.frame(enrichment_scoresMHW2_10vMHW2_25$proteome)
+Tenrichment_scoresMHW2_10vMHW2_25 <- as.data.frame(enrichment_scoresMHW2_10vMHW2_25$transcriptome)
 Tenrichment_scoresMHW2_10vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresMHW2_10vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
-write.table(Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"enrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+#write.table(Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"enrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 sig_Tenrichment_scoresMHW2_10vMHW2_25 <- Tenrichment_scoresMHW2_10vMHW2_25[Tenrichment_scoresMHW2_10vMHW2_25$pval < 0.05, ]
 sig_Tenrichment_scoresMHW2_10vMHW2_25$contrast <- rep("MHW2_10vMHW2_25")
-write.table(sig_Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"sig_Tenrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+sig_Tenrichment_scoresMHW2_10vMHW2_25 <- sig_Tenrichment_scoresMHW2_10vMHW2_25[order(sig_Tenrichment_scoresMHW2_10vMHW2_25$pval), ]
+top_10_esMHW2_10vMHW2_25 <- head(sig_Tenrichment_scoresMHW2_10vMHW2_25,10)
+#write.table(sig_Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"sig_Tenrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 ############################
 
 ##Create dataset with all enrichment scores
-combined_df <- rbind(sig_Tenrichment_scoresCTL_10vMHW2_10, sig_Tenrichment_scoresCTL_25vMHW1_25, sig_Tenrichment_scoresCTL_25vMHW2_25, sig_Tenrichment_scoresMHW1_25vMHW2_25, sig_Tenrichment_scoresMHW2_10vMHW2_25)
+combined_df <- rbind(top_10_esCTL_10vMHW2_10, top_10_esCTL_25vMHW1_25, top_10_esCTL_25vMHW2_25, top_10_esMHW1_25vMHW2_25, top_10_esMHW2_10vMHW2_25)
 combined_df$pathway <- sub("^\\(KEGG\\) ", "", combined_df$pathway)
 ###########################################
 
@@ -926,6 +924,27 @@ for(i in 1:length(contrasts)){
   pieChart(deg_per_treatment_trinity,i,"transcripts",contrasts,colour)
 }
 ############
+
+#Dotplot
+o <- ggplot(combined_df, aes(x = contrast, y = pathway)) +
+  geom_point(aes(size = pval, color = NES, fill = NES), shape = 21, stroke = 0.5) +  
+  scale_color_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +  
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +  
+  scale_size_continuous(range = c(3, 15)) +
+  labs(x = "Contrast", y = "Pathway", 
+       size = "P-value", 
+       color = "NES",
+       fill = "NES") +  
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        panel.grid.major = element_line(linewidth = 1.2, color = "grey90"),  
+        panel.grid.minor = element_line(linewidth = 0.8, color = "grey90"),  
+        panel.background = element_rect(fill = "grey", color = NA))  
+
+ggsave(filename = paste(pathDotplot, "Dotplot.svg", sep = ""), plot = o, device = "svg", width = 15, height = 15)
+ggsave(filename = paste(pathDotplot, "Dotplot.tiff", sep = ""), plot = o, device = "tiff", width = 15, height = 15)
+########
 
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
