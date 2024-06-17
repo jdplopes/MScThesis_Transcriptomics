@@ -516,7 +516,7 @@ write.table(deg_per_treatment_trinity,paste(pathTables_Trinity,"DEG_per_treatmen
 Data_blast_drerio <-
   DGEList(counts = Full_blast_drerio[, 3:17],
           group = Levels,
-          genes = Full_blast_drerio[, 1])
+          genes = Full_blast_drerio[, 2])
 ################################################
 
 ##Filter out lowly expressed genes
@@ -761,32 +761,44 @@ write.table(transcripts_of_interest,paste(pathTables_BSwiss,"transcripts_of_inte
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 #VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV#
 
-DEP_pathway <- DEG_blast_drerio[c(3,4:23)]
-sum(duplicated(DEP$Accession)) #960 duplicated
-##Calculate mean for duplicateds
-DEP_pathway <- DEP_pathway %>%
-  group_by(Accession) %>%
+#Talvez utilizar os accession code em vez de genes names
+
+DEG_pathway <- DEG_blast_drerio[-c(22:26)]
+sum(duplicated(DEG_blast_drerio$ID)) #23343 duplicated
+DEG_pathway$ID <- str_extract(DEG_pathway$ID, "\\|([^|]+)\\|") %>%
+  str_replace_all("\\|", "")
+DEG_pathway <- DEG_pathway %>%##Calculate mean for duplicateds
+  group_by(ID) %>%
   summarize(across(everything(), \(x) mean(x, na.rm = TRUE)))
 
-##Create data frames with Accession, logFC and Pvalue for the pathway analysis (all proteins)
-allp_CTL_10vMHW2_10<- data.frame(DEP_pathway$Accession,DEP_pathway$`logFC-CTL_10vMHW2_10`,DEP_pathway$`Pvalue-CTL_10vMHW2_10`)
-names(allp_CTL_10vMHW2_10) <- c("Accession","logFC","Pvalue")
+##Get gene names
+my_protein_ids <- DEG_pathway$ID
+library(UniProt.ws)
+genes_names <- mapUniProt("UniProtKB_AC-ID", "UniProtKB", query = my_protein_ids)
+genes_names$Gene.Names <- sub(" .*", "", genes_names$Gene.Names)
+colnames(genes_names)[1] <- "ID"
+DEG_pathway_gn <- merge(DEG_pathway,genes_names, by = "ID")
+DEG_pathway_gn <- DEG_pathway_gn[1:22]
 
-allp_CTL_25vMHW1_25<- data.frame(DEP_pathway$Accession,DEP_pathway$`logFC-CTL_25vMHW1_25`,DEP_pathway$`Pvalue-CTL_25vMHW1_25`)
-names(allp_CTL_25vMHW1_25) <- c("Accession","logFC","Pvalue")
+##Create data frames with Accession, logFC and Pvalue for the pathway analysis (all drerio genes)
+allg_CTL_10vMHW2_10<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-CTL_10vMHW2_10`,DEG_pathway$`FDRp-CTL_10vMHW2_10`)
+names(allg_CTL_10vMHW2_10) <- c("Accession","logFC","Pvalue")
 
-allp_CTL_25vMHW2_25<- data.frame(DEP_pathway$Accession,DEP_pathway$`logFC-CTL_25vMHW2_25`,DEP_pathway$`Pvalue-CTL_25vMHW2_25`)
-names(allp_CTL_25vMHW2_25) <- c("Accession","logFC","Pvalue")
+allg_CTL_25vMHW1_25<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-CTL_25vMHW1_25`,DEG_pathway$`FDRp-CTL_25vMHW1_25`)
+names(allg_CTL_25vMHW1_25) <- c("Accession","logFC","Pvalue")
 
-allp_MHW1_25vMHW2_25<- data.frame(DEP_pathway$Accession,DEP_pathway$`logFC-MHW1_25vMHW2_25`,DEP_pathway$`Pvalue-MHW1_25vMHW2_25`)
-names(allp_MHW1_25vMHW2_25) <- c("Accession","logFC","Pvalue")
+allg_CTL_25vMHW2_25<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-CTL_25vMHW2_25`,DEG_pathway$`FDRp-CTL_25vMHW2_25`)
+names(allg_CTL_25vMHW2_25) <- c("Accession","logFC","Pvalue")
 
-allp_MHW2_10vMHW2_25<- data.frame(DEP_pathway$Accession,DEP_pathway$`logFC-MHW2_10vMHW2_25`,DEP_pathway$`Pvalue-MHW2_10vMHW2_25`)
-names(allp_MHW2_10vMHW2_25) <- c("Accession","logFC","Pvalue")
+allg_MHW1_25vMHW2_25<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-MHW1_25vMHW2_25`,DEG_pathway$`FDRp-MHW1_25vMHW2_25`)
+names(allg_MHW1_25vMHW2_25) <- c("Accession","logFC","Pvalue")
+
+allg_MHW2_10vMHW2_25<- data.frame(DEG_pathway$genes,DEG_pathway$`logFC-MHW2_10vMHW2_25`,DEG_pathway$`FDRp-MHW2_10vMHW2_25`)
+names(allg_MHW2_10vMHW2_25) <- c("Accession","logFC","Pvalue")
 ############################################################################
 
 ##Create a data structure
-layers <- c("proteome")
+layers <- c("transcriptome")
 odataCTL_10vMHW2_10 <- initOmicsDataStructure(layer=layers)
 odataCTL_25vMHW1_25 <- initOmicsDataStructure(layer=layers)
 odataCTL_25vMHW2_25 <- initOmicsDataStructure(layer=layers)
@@ -794,31 +806,31 @@ odataMHW1_25vMHW2_25 <- initOmicsDataStructure(layer=layers)
 odataMHW2_10vMHW2_25 <- initOmicsDataStructure(layer=layers)
 #########################
 
-##Add proteome layer
-odataCTL_10vMHW2_10$proteome <- rankFeatures(allp_CTL_10vMHW2_10$logFC,allp_CTL_10vMHW2_10$Pvalue)
-names(odataCTL_10vMHW2_10$proteome) <- allp_CTL_10vMHW2_10$Accession
-odataCTL_10vMHW2_10$proteome <- sort(odataCTL_10vMHW2_10$proteome)
-head(odataCTL_10vMHW2_10$proteome)
+##Add transcriptome layer
+odataCTL_10vMHW2_10$transcriptome <- rankFeatures(allg_CTL_10vMHW2_10$logFC,allg_CTL_10vMHW2_10$Pvalue)
+names(odataCTL_10vMHW2_10$transcriptome) <- allg_CTL_10vMHW2_10$Accession
+odataCTL_10vMHW2_10$transcriptome <- sort(odataCTL_10vMHW2_10$transcriptome)
+head(odataCTL_10vMHW2_10$transcriptome)
 
-odataCTL_25vMHW1_25$proteome <- rankFeatures(allp_CTL_25vMHW1_25$logFC,allp_CTL_25vMHW1_25$Pvalue)
-names(odataCTL_25vMHW1_25$proteome) <- allp_CTL_25vMHW1_25$Accession
-odataCTL_25vMHW1_25$proteome <- sort(odataCTL_25vMHW1_25$proteome)
-head(odataCTL_25vMHW1_25$proteome)
+odataCTL_25vMHW1_25$transcriptome <- rankFeatures(allg_CTL_25vMHW1_25$logFC,allg_CTL_25vMHW1_25$Pvalue)
+names(odataCTL_25vMHW1_25$transcriptome) <- allg_CTL_25vMHW1_25$Accession
+odataCTL_25vMHW1_25$transcriptome <- sort(odataCTL_25vMHW1_25$transcriptome)
+head(odataCTL_25vMHW1_25$transcriptome)
 
-odataCTL_25vMHW2_25$proteome <- rankFeatures(allp_CTL_25vMHW2_25$logFC,allp_CTL_25vMHW2_25$Pvalue)
-names(odataCTL_25vMHW2_25$proteome) <- allp_CTL_25vMHW2_25$Accession
-odataCTL_25vMHW2_25$proteome <- sort(odataCTL_25vMHW2_25$proteome)
-head(odataCTL_25vMHW2_25$proteome)
+odataCTL_25vMHW2_25$transcriptome <- rankFeatures(allg_CTL_25vMHW2_25$logFC,allg_CTL_25vMHW2_25$Pvalue)
+names(odataCTL_25vMHW2_25$transcriptome) <- allg_CTL_25vMHW2_25$Accession
+odataCTL_25vMHW2_25$transcriptome <- sort(odataCTL_25vMHW2_25$transcriptome)
+head(odataCTL_25vMHW2_25$transcriptome)
 
-odataMHW1_25vMHW2_25$proteome <- rankFeatures(allp_MHW1_25vMHW2_25$logFC,allp_MHW1_25vMHW2_25$Pvalue)
-names(odataMHW1_25vMHW2_25$proteome) <- allp_MHW1_25vMHW2_25$Accession
-odataMHW1_25vMHW2_25$proteome <- sort(odataMHW1_25vMHW2_25$proteome)
-head(odataMHW1_25vMHW2_25$proteome)
+odataMHW1_25vMHW2_25$transcriptome <- rankFeatures(allg_MHW1_25vMHW2_25$logFC,allg_MHW1_25vMHW2_25$Pvalue)
+names(odataMHW1_25vMHW2_25$transcriptome) <- allg_MHW1_25vMHW2_25$Accession
+odataMHW1_25vMHW2_25$transcriptome <- sort(odataMHW1_25vMHW2_25$transcriptome)
+head(odataMHW1_25vMHW2_25$transcriptome)
 
-odataMHW2_10vMHW2_25$proteome <- rankFeatures(allp_MHW2_10vMHW2_25$logFC,allp_MHW2_10vMHW2_25$Pvalue)
-names(odataMHW2_10vMHW2_25$proteome) <- allp_MHW2_10vMHW2_25$Accession
-odataMHW2_10vMHW2_25$proteome <- sort(odataMHW2_10vMHW2_25$proteome)
-head(odataMHW2_10vMHW2_25$proteome)
+odataMHW2_10vMHW2_25$transcriptome <- rankFeatures(allg_MHW2_10vMHW2_25$logFC,allg_MHW2_10vMHW2_25$Pvalue)
+names(odataMHW2_10vMHW2_25$transcriptome) <- allg_MHW2_10vMHW2_25$Accession
+odataMHW2_10vMHW2_25$transcriptome <- sort(odataMHW2_10vMHW2_25$transcriptome)
+head(odataMHW2_10vMHW2_25$transcriptome)
 ####################
 
 ##Select the databases we want to query and download pathway definitions
@@ -832,7 +844,7 @@ pathways_short <- lapply(names(pathways), function(name) {
 })
 names(pathways_short) <- names(pathways)
 pathways_short
-pathways$proteome[8]
+pathways$transcriptome[8]
 ########################################################################
 
 ##Run the pathway enrichment
