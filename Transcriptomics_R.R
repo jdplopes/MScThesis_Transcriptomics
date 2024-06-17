@@ -439,30 +439,30 @@ colnames(Results_trinity)<-c(
   "logFC-CTL_10vMHW2_10",
   "logCPM-CTL_10vMHW2_10",
   "LR-CTL_10vMHW2_10",
-  "FDRp-CTL_10vMHW2_10",
+  "Pvalue-CTL_10vMHW2_10",
   "logFC-MHW2_10vMHW2_25",
   "logCPM-MHW2_10vMHW2_25",
   "LR-MHW2_10vMHW2_25",
-  "FDRp-MHW2_10vMHW2_25",
+  "Pvalue-MHW2_10vMHW2_25",
   "logFC-CTL_25vMHW1_25",
   "logCPM-CTL_25vMHW1_25",
   "LR-CTL_25vMHW1_25",
-  "FDRp-CTL_25vMHW1_25",
+  "Pvalue-CTL_25vMHW1_25",
   "logFC-CTL_25vMHW2_25",
   "logCPM-CTL_25vMHW2_25",
   "LR-CTL_25vMHW2_25",
-  "FDRp-CTL_25vMHW2_25",
+  "Pvalue-CTL_25vMHW2_25",
   "logFC-MHW1_25vMHW2_25",
   "logCPM-MHW1_25vMHW2_25",
   "LR-MHW1_25vMHW2_25",
-  "FDRp-MHW1_25vMHW2_25"
+  "Pvalue-MHW1_25vMHW2_25"
 )
 head(Results_trinity)
 write.table(Results_trinity,paste(pathFiles_Trinity,"Results.csv",sep =""), sep=";",col.names=NA)
 #######################################
 
 ##Calculating the nº of DEGs in general 
-expressionTable_trinity<-decideTests(Results_trinity[,grepl("FDRp", colnames(Results_trinity))],coefficients = Results_trinity[,grepl("logFC", colnames(Results_trinity))], adjust.method = "fdr", lfc = 1.5)
+expressionTable_trinity<-decideTests(Results_trinity[,grepl("Pvalue", colnames(Results_trinity))],coefficients = Results_trinity[,grepl("logFC", colnames(Results_trinity))], adjust.method = "fdr", lfc = 1.5)
 expressionTable_trinity<-as.data.frame(expressionTable_trinity)
 head(expressionTable_trinity)
 colnames(expressionTable_trinity)<-c("CTL_10vMHW2_10", "MHW2_10vMHW2_25", "CTL_25vMHW1_25","CTL_25vMHW2_25","MHW1_25vMHW2_25")
@@ -555,30 +555,30 @@ colnames(Results_blast)<-c(
   "logFC-CTL_10vMHW2_10",
   "logCPM-CTL_10vMHW2_10",
   "LR-CTL_10vMHW2_10",
-  "FDRp-CTL_10vMHW2_10",
+  "Pvalue-CTL_10vMHW2_10",
   "logFC-MHW2_10vMHW2_25",
   "logCPM-MHW2_10vMHW2_25",
   "LR-MHW2_10vMHW2_25",
-  "FDRp-MHW2_10vMHW2_25",
+  "Pvalue-MHW2_10vMHW2_25",
   "logFC-CTL_25vMHW1_25",
   "logCPM-CTL_25vMHW1_25",
   "LR-CTL_25vMHW1_25",
-  "FDRp-CTL_25vMHW1_25",
+  "Pvalue-CTL_25vMHW1_25",
   "logFC-CTL_25vMHW2_25",
   "logCPM-CTL_25vMHW2_25",
   "LR-CTL_25vMHW2_25",
-  "FDRp-CTL_25vMHW2_25",
+  "Pvalue-CTL_25vMHW2_25",
   "logFC-MHW1_25vMHW2_25",
   "logCPM-MHW1_25vMHW2_25",
   "LR-MHW1_25vMHW2_25",
-  "FDRp-MHW1_25vMHW2_25"
+  "Pvalue-MHW1_25vMHW2_25"
 )
 head(Results_blast)
 write.table(Results_blast,paste(pathFiles_BSwiss,"Results.csv",sep =""), sep=";",col.names=NA)
 #######################################
 
 ##Calculating the nº of DEGs in general 
-expressionTable_blast<-decideTests(Results_blast[,grepl("FDRp", colnames(Results_blast))],coefficients = Results_blast[,grepl("logFC", colnames(Results_blast))], adjust.method = "fdr", lfc = 1.5)
+expressionTable_blast<-decideTests(Results_blast[,grepl("Pvalue", colnames(Results_blast))],coefficients = Results_blast[,grepl("logFC", colnames(Results_blast))], adjust.method = "fdr", lfc = 1.5)
 expressionTable_blast<-as.data.frame(expressionTable_blast)
 head(expressionTable_blast)
 colnames(expressionTable_blast)<-c("CTL_10vMHW2_10", "MHW2_10vMHW2_25", "CTL_25vMHW1_25","CTL_25vMHW2_25","MHW1_25vMHW2_25")
@@ -688,30 +688,30 @@ colnames(Results_blast_drerio)<-c(
   "logFC-CTL_10vMHW2_10",
   "logCPM-CTL_10vMHW2_10",
   "LR-CTL_10vMHW2_10",
-  "FDRp-CTL_10vMHW2_10",
+  "Pvalue-CTL_10vMHW2_10",
   "logFC-MHW2_10vMHW2_25",
   "logCPM-MHW2_10vMHW2_25",
   "LR-MHW2_10vMHW2_25",
-  "FDRp-MHW2_10vMHW2_25",
+  "Pvalue-MHW2_10vMHW2_25",
   "logFC-CTL_25vMHW1_25",
   "logCPM-CTL_25vMHW1_25",
   "LR-CTL_25vMHW1_25",
-  "FDRp-CTL_25vMHW1_25",
+  "Pvalue-CTL_25vMHW1_25",
   "logFC-CTL_25vMHW2_25",
   "logCPM-CTL_25vMHW2_25",
   "LR-CTL_25vMHW2_25",
-  "FDRp-CTL_25vMHW2_25",
+  "Pvalue-CTL_25vMHW2_25",
   "logFC-MHW1_25vMHW2_25",
   "logCPM-MHW1_25vMHW2_25",
   "LR-MHW1_25vMHW2_25",
-  "FDRp-MHW1_25vMHW2_25"
+  "Pvalue-MHW1_25vMHW2_25"
 )
 head(Results_blast_drerio)
 write.table(Results_blast_drerio,paste(pathFiles_BDrerio,"Results.csv",sep =""), sep=";",col.names=NA)
 #######################################
 
 ##Calculating the nº of DEGs in general 
-expressionTable_blast_drerio<-decideTests(Results_blast_drerio[,grepl("FDRp", colnames(Results_blast_drerio))],coefficients = Results_blast_drerio[,grepl("logFC", colnames(Results_blast_drerio))], adjust.method = "fdr", lfc = 1.5)
+expressionTable_blast_drerio<-decideTests(Results_blast_drerio[,grepl("Pvalue", colnames(Results_blast_drerio))],coefficients = Results_blast_drerio[,grepl("logFC", colnames(Results_blast_drerio))], adjust.method = "fdr", lfc = 1.5)
 expressionTable_blast_drerio<-as.data.frame(expressionTable_blast_drerio)
 head(expressionTable_blast_drerio)
 colnames(expressionTable_blast_drerio)<-c("CTL_10vMHW2_10", "MHW2_10vMHW2_25", "CTL_25vMHW1_25","CTL_25vMHW2_25","MHW1_25vMHW2_25")
