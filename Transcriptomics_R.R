@@ -81,6 +81,8 @@ pathwissHBarplotGOterms_BDrerio <- "Blast_Drerio/Plots/Horizontal Barplots - Top
 pathPiePathways_BDrerio <- "Blast_Drerio/Plots/PieCharts - Pathways/"
 pathDotplot <- "Blast_Drerio/Plots/Dotplot/"
 
+pathBothOmicsPathways <- "C:/Users/jdpl2/OneDrive/Ambiente de Trabalho/Mestrado/2º Ano/Both Omics/"
+
 #######################################Functions#######################################
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 #VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV#
@@ -652,9 +654,9 @@ write.table(transcripts_of_interest,paste(pathTables_BSwiss,"transcripts_of_inte
 
 ##Create a DGEList object from a table of counts 
 Data_blast_drerio <-
-  DGEList(counts = blast_drerio_trinity_merge[, 2:16],
+  DGEList(counts = blast_drerio_trinity_merge[, 4:18],
           group = Levels,
-          genes = blast_drerio_trinity_merge[, 1])
+          genes = blast_drerio_trinity_merge[, 3])
 ################################################
 
 ##Filter out lowly expressed genes
@@ -769,6 +771,7 @@ write.table(deg_drerio_per_treatment,paste(pathTables_BSwiss,"DEG_per_treatment.
 DEG_pathway <- DEG_blast_drerio[-c(22:26)]
 DEG_pathway$ID <- str_extract(DEG_pathway$ID, "\\|([^|]+)\\|") %>%
   str_replace_all("\\|", "")
+write.table(DEG_pathway, paste(pathBothOmicsPathways, "DEG_pathway.csv", sep = ""),sep = ";",col.names = TRUE, row.names = FALSE)
 
 ##Create data frames with Accession, logFC and Pvalue for the pathway analysis
 allg_CTL_10vMHW2_10<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_10vMHW2_10`,DEG_pathway$`Pvalue-CTL_10vMHW2_10`)
