@@ -58,18 +58,18 @@ dir.create("Trinity/Plots/PieCharts")
 
 ##Directories
 ##Folders
-pathFiles_Trinity <- "Trinity/Files/"
-pathTables_Trinity <- "Trinity/Files/Tables/"
+pathFiles_Trinity <- "Trinity/Files/" #
+pathTables_Trinity <- "Trinity/Files/Tables/" #
 pathVolcano_Trinity <- "Trinity/Plots/Volcano plots/"
 pathHeatmap_Trinity <- "Trinity/Plots/Heatmap/"
 pathPieCharts_Trinity <- "Trinity/Plots/PieCharts/"
 
-pathFiles_BSwiss <- "Blast_SwissProt/Files/"
-pathTables_BSwiss <- "Blast_SwissProt/Files/Tables/"
+pathFiles_BSwiss <- "Blast_SwissProt/Files/" #
+pathTables_BSwiss <- "Blast_SwissProt/Files/Tables/" #
 pathVolcano_BSwiss <- "Blast_SwissProt/Plots/Volcano plots/"
 pathPieCharts_BSwiss <- "Blast_SwissProt/Plots/PieCharts/"
 
-pathFiles_BDrerio <- "Blast_Drerio/Files/"
+pathFiles_BDrerio <- "Blast_Drerio/Files/" #
 pathTables_BDreio <- "Blast_Drerio/Files/Tables/"
 pathPlots_BDrerio <- "Blast_Drerio/Plots/"
 pathVolcano_BDrerio<- "Blast_Drerio/Plots/Volcano plots/"
@@ -322,7 +322,7 @@ Trinityfile<-"C:\\Users\\jdpl2\\OneDrive\\Ambiente de Trabalho\\Mestrado\\2º An
 Blast <- read.csv("C:\\Users\\jdpl2\\OneDrive\\Ambiente de Trabalho\\Mestrado\\2º Ano\\Outputs\\Server\\Blastp\\Blastp_for_analysis\\Pmicrops_Blastp_SwissProt.csv",sep =";",header = F)
 #####################
 
-#Blast_drerio
+#Blast with only drerio matches
 Blast_drerio <- read.csv("C:\\Users\\jdpl2\\OneDrive\\Ambiente de Trabalho\\Mestrado\\2º Ano\\Outputs\\Server\\Blast_Drerio\\Pmicrops_Blastp_Drerio.csv",sep =";",header = F)
 #############
 
@@ -385,7 +385,7 @@ colnames(Blast_drerio) <- c("TrinityID","Accession", "%ID", "Aligment_Length", "
 Blast_drerio <- subset(Blast_drerio, grepl("^TRINITY", Blast_drerio[,1]))
 Blast_drerio$ID<-unlist(sapply(Blast_drerio$TrinityID, function(x) unlist(strsplit(x, ".", fixed = TRUE))[1]))
 blast_drerio_trinity_merge<-merge(Blast_drerio,Counts, by = "ID")
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:16)]
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:19)]
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-c(1,2)]
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge %>%
   group_by(Accession) %>%
@@ -498,7 +498,7 @@ uedeg_CTL_25vMHW1_25_trinity<-sum(degTable_trinity$CTL_25vMHW1_25 == 1);uedeg_CT
 uedeg_MHW1_25vMHW2_25_trinity<-sum(degTable_trinity$MHW1_25vMHW2_25 == 1);uedeg_MHW1_25vMHW2_25_trinity
 ############################################
 
-##Table with total DEG, underexpressed genes and overexpressed genes per treatment
+##Table with total differential expressed transcripts, underexpressed transcripts and overexpressed transcripts per treatment
 deg_per_treatment_trinity <- data.frame(Treatments = contrasts, 
                                 No_of_Genes = c(DEG_CTL_10vMHW2_10_trinity,DEG_CTL_25vMHW1_25_trinity,DEG_CTL_25vMHW2_25_trinity,DEG_MHW1_25vMHW2_25_trinity,DEG_MHW2_10vMHW2_25_trinity),
                                 No_of_underexpressed_Genes = c(uedeg_CTL_10vMHW2_10_trinity,uedeg_CTL_25vMHW1_25_trinity,uedeg_CTL_25vMHW2_25_trinity,uedeg_MHW1_25vMHW2_25_trinity,uedeg_MHW2_10vMHW2_25_trinity),
@@ -614,7 +614,7 @@ uedeg_CTL_25vMHW1_25_blast<-sum(degTable_blast$CTL_25vMHW1_25 == 1);uedeg_CTL_25
 uedeg_MHW1_25vMHW2_25_blast<-sum(degTable_blast$MHW1_25vMHW2_25 == 1);uedeg_MHW1_25vMHW2_25_blast
 ############################################
 
-##Table with total DEG, underexpressed genes and overexpressed genes per treatment
+##Table with total diferantial expressed ORFs, underexpressed ORFs and overexpressed ORFs per treatment
 deg_per_treatment_blast <- data.frame(Treatments = contrasts, 
                                       No_of_Genes = c(DEG_CTL_10vMHW2_10_blast,DEG_CTL_25vMHW1_25_blast,DEG_CTL_25vMHW2_25_blast,DEG_MHW1_25vMHW2_25_blast,DEG_MHW2_10vMHW2_25_blast),
                                       No_of_overexpressed_Genes = c(oedeg_CTL_10vMHW2_10_blast,oedeg_CTL_25vMHW1_25_blast,oedeg_CTL_25vMHW2_25_blast,oedeg_MHW1_25vMHW2_25_blast,oedeg_MHW2_10vMHW2_25_blast),
@@ -652,9 +652,9 @@ write.table(transcripts_of_interest,paste(pathTables_BSwiss,"transcripts_of_inte
 
 ##Create a DGEList object from a table of counts 
 Data_blast_drerio <-
-  DGEList(counts = Full_blast_drerio[, 3:17],
+  DGEList(counts = blast_drerio_trinity_merge[, 2:16],
           group = Levels,
-          genes = Full_blast_drerio[, 2])
+          genes = blast_drerio_trinity_merge[, 1])
 ################################################
 
 ##Filter out lowly expressed genes
@@ -771,19 +771,19 @@ DEG_pathway$ID <- str_extract(DEG_pathway$ID, "\\|([^|]+)\\|") %>%
   str_replace_all("\\|", "")
 
 ##Create data frames with Accession, logFC and Pvalue for the pathway analysis
-allg_CTL_10vMHW2_10<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_10vMHW2_10`,DEG_pathway$`FDRp-CTL_10vMHW2_10`)
+allg_CTL_10vMHW2_10<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_10vMHW2_10`,DEG_pathway$`Pvalue-CTL_10vMHW2_10`)
 names(allg_CTL_10vMHW2_10) <- c("Accession","logFC","Pvalue")
 
-allg_CTL_25vMHW1_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_25vMHW1_25`,DEG_pathway$`FDRp-CTL_25vMHW1_25`)
+allg_CTL_25vMHW1_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_25vMHW1_25`,DEG_pathway$`Pvalue-CTL_25vMHW1_25`)
 names(allg_CTL_25vMHW1_25) <- c("Accession","logFC","Pvalue")
 
-allg_CTL_25vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_25vMHW2_25`,DEG_pathway$`FDRp-CTL_25vMHW2_25`)
+allg_CTL_25vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-CTL_25vMHW2_25`,DEG_pathway$`Pvalue-CTL_25vMHW2_25`)
 names(allg_CTL_25vMHW2_25) <- c("Accession","logFC","Pvalue")
 
-allg_MHW1_25vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-MHW1_25vMHW2_25`,DEG_pathway$`FDRp-MHW1_25vMHW2_25`)
+allg_MHW1_25vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-MHW1_25vMHW2_25`,DEG_pathway$`Pvalue-MHW1_25vMHW2_25`)
 names(allg_MHW1_25vMHW2_25) <- c("Accession","logFC","Pvalue")
 
-allg_MHW2_10vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-MHW2_10vMHW2_25`,DEG_pathway$`FDRp-MHW2_10vMHW2_25`)
+allg_MHW2_10vMHW2_25<- data.frame(DEG_pathway$ID,DEG_pathway$`logFC-MHW2_10vMHW2_25`,DEG_pathway$`Pvalue-MHW2_10vMHW2_25`)
 names(allg_MHW2_10vMHW2_25) <- c("Accession","logFC","Pvalue")
 ############################################################################
 
