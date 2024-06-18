@@ -387,9 +387,9 @@ Blast_drerio$ID<-unlist(sapply(Blast_drerio$TrinityID, function(x) unlist(strspl
 blast_drerio_trinity_merge<-merge(Blast_drerio,Counts, by = "ID")
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:19)]
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-c(1,2)]
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge %>%
-  group_by(Accession) %>%
-  summarize(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+#blast_drerio_trinity_merge <- blast_drerio_trinity_merge %>%
+  #group_by(Accession) %>%
+  #summarize(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
 #Full_blast_drerio<-merge(blast_drerio_trinity_merge, TxSEQ, by="ID")
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
