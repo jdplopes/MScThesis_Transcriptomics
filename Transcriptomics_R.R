@@ -387,7 +387,7 @@ colnames(Blast_drerio) <- c("TrinityID","Accession", "%ID", "Aligment_Length", "
 Blast_drerio <- subset(Blast_drerio, grepl("^TRINITY", Blast_drerio[,1]))
 Blast_drerio$ID<-unlist(sapply(Blast_drerio$TrinityID, function(x) unlist(strsplit(x, ".", fixed = TRUE))[1]))
 blast_drerio_trinity_merge<-merge(Blast_drerio,Counts, by = "ID")
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:19)]
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:16)]
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-c(1,2)]
 #blast_drerio_trinity_merge <- blast_drerio_trinity_merge %>%
   #group_by(Accession) %>%
@@ -654,9 +654,9 @@ write.table(transcripts_of_interest,paste(pathTables_BSwiss,"transcripts_of_inte
 
 ##Create a DGEList object from a table of counts 
 Data_blast_drerio <-
-  DGEList(counts = blast_drerio_trinity_merge[, 4:18],
+  DGEList(counts = blast_drerio_trinity_merge[, 2:16],
           group = Levels,
-          genes = blast_drerio_trinity_merge[, 3])
+          genes = blast_drerio_trinity_merge[, 1])
 ################################################
 
 ##Filter out lowly expressed genes
