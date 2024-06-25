@@ -68,6 +68,7 @@ pathFiles_BSwiss <- "Blast_SwissProt/Files/" #
 pathTables_BSwiss <- "Blast_SwissProt/Files/Tables/" #
 pathVolcano_BSwiss <- "Blast_SwissProt/Plots/Volcano plots/"
 pathPieCharts_BSwiss <- "Blast_SwissProt/Plots/PieCharts/"
+pathHeatmap_BSwiss <- "Blast_SwissProt/Plots/Heatmap/"
 
 pathFiles_BDrerio <- "Blast_Drerio/Files/" #
 pathTables_BDreio <- "Blast_Drerio/Files/Tables/"
@@ -110,9 +111,9 @@ volcanoPlot<-function(pathFiles_Trinity, colour, legend, title, contrast, i){
   points(DEG_trinity[which(DEG_trinity[contrast] == -1), paste("logFC-", contrast, sep = "")], -log10(DEG_trinity[which(DEG_trinity[contrast] == -1), paste("FDRp-", contrast, sep = "")]), pch = 20, cex = 1.5, col = colour[2,])
 }
 
-heatmapGraph<-function(colCutoff, rowCutoff, rowSideColors){
-  heatData<-as.matrix(degTable_trinity[,c(2,6,10,14,18)])
-  rownames(heatData)<-degTable_trinity$Description
+heatmapGraph<-function(colCutoff, rowCutoff, rowSideColors, data, path){
+  heatData<-as.matrix(data[,c(2,6,10,14,18)])
+  rownames(heatData)<-data$Description
   head(heatData)
   clustFunction <- function(x) hclust(x, method="complete")
   distFunction <- function(x) dist(x,method="euclidean")
@@ -122,6 +123,11 @@ heatmapGraph<-function(colCutoff, rowCutoff, rowSideColors){
   cClusters<-cutree(colFit,h=colCutoff)
   cHeight<-length(unique(as.vector(cClusters)))
   colHeight = cCol(cHeight)
+  cRow<-colorRampPalette(brewer.pal(9,"Set1"))
+  rowFit<-clustFunction(distFunction(heatData))
+  rClusters<-cutree(rowFit,h=rowCutoff)
+  rHeight<-length(unique(as.vector(rClusters)));
+  rowHeight = cRow(rHeight)
   xDimension<-25
   yDimension<-25
   windows(xDimension, yDimension)
@@ -147,7 +153,7 @@ heatmapGraph<-function(colCutoff, rowCutoff, rowSideColors){
             margins = c(8,13),
             labRow = "")
   recordPlot()
-  dev.print(tiff, paste(pathHeatmap_Trinity, "Heatmap", ".tif", sep =""), height = 25, width = 25,  units = 'cm', res=600)
+  dev.print(tiff, paste(path, "Heatmap", ".tif", sep =""), height = 15, width = 15,  units = 'cm', res=600)
 }
 
 pieChart <- function(data, i,type,contrasts,colour){
@@ -916,9 +922,8 @@ for(i in 1:length(contrasts)){
 ##############
 
 ##Heatmap
-colCutoff = 100
-rowCutoff = 120
-heatmapGraph(colCutoff, rowCutoff, rowSideColors)
+heatmapGraph(100, 20, rowSideColors,degTable_trinity,pathHeatmap_Trinity)
+heatmapGraph(60,24,rowSideColors,degTable_blast_drerio,pathHeatmap_BSwiss)
 #########
 
 ##Pie charts
