@@ -902,7 +902,8 @@ top_10_esMHW2_10vMHW2_25 <- head(sig_Tenrichment_scoresMHW2_10vMHW2_25,10)
 ############################
 
 ##Create dataset with all enrichment scores
-combined_df <- rbind(top_10_esCTL_10vMHW2_10, top_10_esCTL_25vMHW1_25, top_10_esCTL_25vMHW2_25, top_10_esMHW1_25vMHW2_25, top_10_esMHW2_10vMHW2_25)
+combined_df_sig <- rbind(sig_Tenrichment_scoresCTL_10vMHW2_10,sig_Tenrichment_scoresCTL_25vMHW1_25,sig_Tenrichment_scoresCTL_25vMHW2_25,sig_Tenrichment_scoresMHW1_25vMHW2_25,sig_Tenrichment_scoresMHW2_10vMHW2_25)
+combined_df_top10 <- rbind(top_10_esCTL_10vMHW2_10, top_10_esCTL_25vMHW1_25, top_10_esCTL_25vMHW2_25, top_10_esMHW1_25vMHW2_25, top_10_esMHW2_10vMHW2_25)
 combined_df$pathway <- sub("^\\(KEGG\\) ", "", combined_df$pathway)
 ###########################################
 
