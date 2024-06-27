@@ -31,21 +31,12 @@ dir.create("Blast_Drerio")
 dir.create("Blast_Drerio/Files")
 dir.create("Blast_Drerio/Files/Tables")
 dir.create("Blast_Drerio/Plots")
-dir.create("Blast_Drerio/Plots/Volcano plots")
-dir.create("Blast_Drerio/Plots/Heatmap")
-dir.create("Blast_Drerio/Plots/Barplot")
-dir.create("Blast_Drerio/Plots/PieCharts - All GO terms")
-dir.create("Blast_Drerio/Plots/PieCharts - Top 10 terms")
-dir.create("Blast_Drerio/Plots/Horizontal Barplots - Top 10 terms")
-dir.create("Blast_Drerio/Plots/PieCharts - Pathways")
 dir.create("Blast_Drerio/Plots/Dotplot")
 
 dir.create("Blast_SwissProt")
 dir.create("Blast_SwissProt/Files")
 dir.create("Blast_SwissProt/Files/Tables")
 dir.create("Blast_SwissProt/Plots")
-dir.create("Blast_SwissProt/Plots/Dotplot")
-dir.create("Blast_SwissProt/Plots/Volcano plots")
 dir.create("Blast_SwissProt/Plots/Heatmap")
 dir.create("Blast_SwissProt/Plots/PieCharts")
 
@@ -59,28 +50,19 @@ dir.create("Trinity/Plots/PieCharts")
 
 ##Directories
 ##Folders
-pathFiles_Trinity <- "Trinity/Files/" #
-pathTables_Trinity <- "Trinity/Files/Tables/" #
+pathFiles_Trinity <- "Trinity/Files/" 
+pathTables_Trinity <- "Trinity/Files/Tables/" 
 pathVolcano_Trinity <- "Trinity/Plots/Volcano plots/"
 pathHeatmap_Trinity <- "Trinity/Plots/Heatmap/"
 pathPieCharts_Trinity <- "Trinity/Plots/PieCharts/"
 
-pathFiles_BSwiss <- "Blast_SwissProt/Files/" #
-pathTables_BSwiss <- "Blast_SwissProt/Files/Tables/" #
-pathVolcano_BSwiss <- "Blast_SwissProt/Plots/Volcano plots/"
+pathFiles_BSwiss <- "Blast_SwissProt/Files/" 
+pathTables_BSwiss <- "Blast_SwissProt/Files/Tables/" 
 pathPieCharts_BSwiss <- "Blast_SwissProt/Plots/PieCharts/"
 pathHeatmap_BSwiss <- "Blast_SwissProt/Plots/Heatmap/"
 
-pathFiles_BDrerio <- "Blast_Drerio/Files/" #
+pathFiles_BDrerio <- "Blast_Drerio/Files/" 
 pathTables_BDreio <- "Blast_Drerio/Files/Tables/"
-pathPlots_BDrerio <- "Blast_Drerio/Plots/"
-pathVolcano_BDrerio<- "Blast_Drerio/Plots/Volcano plots/"
-pathHeatmap_BDrerio <- "Blast_Drerio/Plots/Heatmap/"
-pathBarplot_BDrerio <- "Blast_Drerio/Plots/Barplot/"
-pathwissPieAllGOterms_BDrerio <- "Blast_Drerio/Plots/PieCharts - All GO terms/"
-pathPieTop10GOterms_BDrerio <- "Blast_Drerio/Plots/PieCharts - Top 10 terms/"
-pathwissHBarplotGOterms_BDrerio <- "Blast_Drerio/Plots/Horizontal Barplots - Top 10 terms/"
-pathPiePathways_BDrerio <- "Blast_Drerio/Plots/PieCharts - Pathways/"
 pathDotplot <- "Blast_Drerio/Plots/Dotplot/"
 
 pathBothOmicsPathways <- "C:/Users/jdpl2/OneDrive/Ambiente de Trabalho/Mestrado/2º Ano/Both Omics/"
