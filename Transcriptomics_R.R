@@ -398,9 +398,16 @@ Blast_drerio$ID<-unlist(sapply(Blast_drerio$TrinityID, function(x) unlist(strspl
 blast_drerio_trinity_merge<-merge(Blast_drerio,Counts, by = "ID")
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:16)]
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-c(1,2)]
-#blast_drerio_trinity_merge <- blast_drerio_trinity_merge %>%
-  #group_by(Accession) %>%
-  #summarize(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+w <- c()
+for (i in c(1:length(unique(blast_drerio_trinity_merge$Accession)))){
+  dups <- which(blast_drerio_trinity_merge$Accession %in% unique(blast_drerio_trinity_merge$Accession)[i])
+  v <- c()
+  for (j in dups){
+    v <- c(v,mean(as.numeric(blast_drerio_trinity_merge[-c(1,2)][j,])))
+  }
+  w = c(w,dups[which(v == max(v))[1]])
+}
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge[w,]
 #Full_blast_drerio<-merge(blast_drerio_trinity_merge, TxSEQ, by="ID")
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
@@ -853,57 +860,72 @@ pathways$transcriptome[8]
 enrichment_scoresCTL_10vMHW2_10 <- multiGSEA(pathways,odataCTL_10vMHW2_10)
 Tenrichment_scoresCTL_10vMHW2_10 <- as.data.frame(enrichment_scoresCTL_10vMHW2_10$transcriptome)
 Tenrichment_scoresCTL_10vMHW2_10$leadingEdge <- sapply(Tenrichment_scoresCTL_10vMHW2_10$leadingEdge, function(x) paste(x, collapse = ";"))
+Tenrichment_scoresCTL_10vMHW2_10 <- Tenrichment_scoresCTL_10vMHW2_10[order(Tenrichment_scoresCTL_10vMHW2_10$padj),]
+Tenrichment_scoresCTL_10vMHW2_10$contrast <- rep("CTL_10vMHW2_10")
+top_5_esCTL_10vMHW2_10 <- head(Tenrichment_scoresCTL_10vMHW2_10,5)
 #write.table(Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
-sig_Tenrichment_scoresCTL_10vMHW2_10 <- Tenrichment_scoresCTL_10vMHW2_10[Tenrichment_scoresCTL_10vMHW2_10$pval < 0.05, ]
-sig_Tenrichment_scoresCTL_10vMHW2_10$contrast <- rep("CTL_10vMHW2_10")
-sig_Tenrichment_scoresCTL_10vMHW2_10 <- sig_Tenrichment_scoresCTL_10vMHW2_10[order(sig_Tenrichment_scoresCTL_10vMHW2_10$pval), ]
-top_10_esCTL_10vMHW2_10 <- head(sig_Tenrichment_scoresCTL_10vMHW2_10,10)
+#sig_Tenrichment_scoresCTL_10vMHW2_10 <- Tenrichment_scoresCTL_10vMHW2_10[Tenrichment_scoresCTL_10vMHW2_10$pval < 0.05, ]
+#sig_Tenrichment_scoresCTL_10vMHW2_10$contrast <- rep("CTL_10vMHW2_10")
+#sig_Tenrichment_scoresCTL_10vMHW2_10 <- sig_Tenrichment_scoresCTL_10vMHW2_10[order(sig_Tenrichment_scoresCTL_10vMHW2_10$pval), ]
+#top_15_esCTL_10vMHW2_10 <- head(sig_Tenrichment_scoresCTL_10vMHW2_10,15)
 #write.table(sig_Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"sig_enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresCTL_25vMHW1_25 <- multiGSEA(pathways,odataCTL_25vMHW1_25)
 Tenrichment_scoresCTL_25vMHW1_25 <- as.data.frame(enrichment_scoresCTL_25vMHW1_25$transcriptome)
 Tenrichment_scoresCTL_25vMHW1_25$leadingEdge <- sapply(Tenrichment_scoresCTL_25vMHW1_25$leadingEdge, function(x) paste(x, collapse = ";"))
+Tenrichment_scoresCTL_25vMHW1_25 <- Tenrichment_scoresCTL_25vMHW1_25[order(Tenrichment_scoresCTL_25vMHW1_25$padj),]
+Tenrichment_scoresCTL_25vMHW1_25$contrast <- rep("CTL_25vMHW1_25")
+top_5_esCTL_25vMHW1_25 <- head(Tenrichment_scoresCTL_25vMHW1_25,5)
 #write.table(Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
-sig_Tenrichment_scoresCTL_25vMHW1_25 <- Tenrichment_scoresCTL_25vMHW1_25[Tenrichment_scoresCTL_25vMHW1_25$pval < 0.05, ]
-sig_Tenrichment_scoresCTL_25vMHW1_25$contrast <- rep("CTL_25vMHW1_25")
-sig_Tenrichment_scoresCTL_25vMHW1_25 <- sig_Tenrichment_scoresCTL_25vMHW1_25[order(sig_Tenrichment_scoresCTL_25vMHW1_25$pval), ]
-top_10_esCTL_25vMHW1_25 <- head(sig_Tenrichment_scoresCTL_25vMHW1_25,10)
+#sig_Tenrichment_scoresCTL_25vMHW1_25 <- Tenrichment_scoresCTL_25vMHW1_25[Tenrichment_scoresCTL_25vMHW1_25$pval < 0.05, ]
+#sig_Tenrichment_scoresCTL_25vMHW1_25$contrast <- rep("CTL_25vMHW1_25")
+#sig_Tenrichment_scoresCTL_25vMHW1_25 <- sig_Tenrichment_scoresCTL_25vMHW1_25[order(sig_Tenrichment_scoresCTL_25vMHW1_25$pval), ]
+#top_15_esCTL_25vMHW1_25 <- head(sig_Tenrichment_scoresCTL_25vMHW1_25,15)
 #write.table(sig_Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"sig_enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresCTL_25vMHW2_25 <- multiGSEA(pathways,odataCTL_25vMHW2_25)
 Tenrichment_scoresCTL_25vMHW2_25 <- as.data.frame(enrichment_scoresCTL_25vMHW2_25$transcriptome)
 Tenrichment_scoresCTL_25vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresCTL_25vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
+Tenrichment_scoresCTL_25vMHW2_25 <- Tenrichment_scoresCTL_25vMHW2_25[order(Tenrichment_scoresCTL_25vMHW2_25$padj),]
+Tenrichment_scoresCTL_25vMHW2_25$contrast <- rep("CTL_25vMHW2_25")
+top_5_esCTL_25vMHW2_25 <- head(Tenrichment_scoresCTL_25vMHW2_25,5)
 #write.table(Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
-sig_Tenrichment_scoresCTL_25vMHW2_25 <- Tenrichment_scoresCTL_25vMHW2_25[Tenrichment_scoresCTL_25vMHW2_25$pval < 0.05, ]
-sig_Tenrichment_scoresCTL_25vMHW2_25$contrast <- rep("CTL_25vMHW2_25")
-sig_Tenrichment_scoresCTL_25vMHW2_25 <- sig_Tenrichment_scoresCTL_25vMHW2_25[order(sig_Tenrichment_scoresCTL_25vMHW2_25$pval), ]
-top_10_esCTL_25vMHW2_25 <- head(sig_Tenrichment_scoresCTL_25vMHW2_25,10)
+#sig_Tenrichment_scoresCTL_25vMHW2_25 <- Tenrichment_scoresCTL_25vMHW2_25[Tenrichment_scoresCTL_25vMHW2_25$pval < 0.05, ]
+#sig_Tenrichment_scoresCTL_25vMHW2_25$contrast <- rep("CTL_25vMHW2_25")
+#sig_Tenrichment_scoresCTL_25vMHW2_25 <- sig_Tenrichment_scoresCTL_25vMHW2_25[order(sig_Tenrichment_scoresCTL_25vMHW2_25$pval), ]
+#top_15_esCTL_25vMHW2_25 <- head(sig_Tenrichment_scoresCTL_25vMHW2_25,15)
 #write.table(sig_Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"sig_enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresMHW1_25vMHW2_25 <- multiGSEA(pathways,odataMHW1_25vMHW2_25)
 Tenrichment_scoresMHW1_25vMHW2_25 <- as.data.frame(enrichment_scoresMHW1_25vMHW2_25$transcriptome)
 Tenrichment_scoresMHW1_25vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresMHW1_25vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
+Tenrichment_scoresMHW1_25vMHW2_25 <- Tenrichment_scoresMHW1_25vMHW2_25[order(Tenrichment_scoresMHW1_25vMHW2_25$padj),]
+Tenrichment_scoresMHW1_25vMHW2_25$contrast <- rep("MHW1_25vMHW2_25")
+top_5_esMHW1_25vMHW2_25 <- head(Tenrichment_scoresMHW1_25vMHW2_25,5)
 #write.table(Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"enrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
-sig_Tenrichment_scoresMHW1_25vMHW2_25 <- Tenrichment_scoresMHW1_25vMHW2_25[Tenrichment_scoresMHW1_25vMHW2_25$pval < 0.05, ]
-sig_Tenrichment_scoresMHW1_25vMHW2_25$contrast <- rep("MHW1_25vMHW2_25")
-sig_Tenrichment_scoresMHW1_25vMHW2_25 <- sig_Tenrichment_scoresMHW1_25vMHW2_25[order(sig_Tenrichment_scoresMHW1_25vMHW2_25$pval), ]
-top_10_esMHW1_25vMHW2_25 <- head(sig_Tenrichment_scoresMHW1_25vMHW2_25,10)
+#sig_Tenrichment_scoresMHW1_25vMHW2_25 <- Tenrichment_scoresMHW1_25vMHW2_25[Tenrichment_scoresMHW1_25vMHW2_25$pval < 0.05, ]
+#sig_Tenrichment_scoresMHW1_25vMHW2_25$contrast <- rep("MHW1_25vMHW2_25")
+#sig_Tenrichment_scoresMHW1_25vMHW2_25 <- sig_Tenrichment_scoresMHW1_25vMHW2_25[order(sig_Tenrichment_scoresMHW1_25vMHW2_25$pval), ]
+#top_15_esMHW1_25vMHW2_25 <- head(sig_Tenrichment_scoresMHW1_25vMHW2_25,15)
 #write.table(sig_Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"sig_Tenrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresMHW2_10vMHW2_25 <- multiGSEA(pathways,odataMHW2_10vMHW2_25)
 Tenrichment_scoresMHW2_10vMHW2_25 <- as.data.frame(enrichment_scoresMHW2_10vMHW2_25$transcriptome)
 Tenrichment_scoresMHW2_10vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresMHW2_10vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
+Tenrichment_scoresMHW2_10vMHW2_25 <- Tenrichment_scoresMHW2_10vMHW2_25[order(Tenrichment_scoresMHW2_10vMHW2_25$padj),]
+Tenrichment_scoresMHW2_10vMHW2_25$contrast <- rep("MHW2_10vMHW2_25")
+top_5_esMHW2_10vMHW2_25 <- head(Tenrichment_scoresMHW2_10vMHW2_25,5)
 #write.table(Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"enrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
-sig_Tenrichment_scoresMHW2_10vMHW2_25 <- Tenrichment_scoresMHW2_10vMHW2_25[Tenrichment_scoresMHW2_10vMHW2_25$pval < 0.05, ]
-sig_Tenrichment_scoresMHW2_10vMHW2_25$contrast <- rep("MHW2_10vMHW2_25")
-sig_Tenrichment_scoresMHW2_10vMHW2_25 <- sig_Tenrichment_scoresMHW2_10vMHW2_25[order(sig_Tenrichment_scoresMHW2_10vMHW2_25$pval), ]
-top_10_esMHW2_10vMHW2_25 <- head(sig_Tenrichment_scoresMHW2_10vMHW2_25,10)
+#sig_Tenrichment_scoresMHW2_10vMHW2_25 <- Tenrichment_scoresMHW2_10vMHW2_25[Tenrichment_scoresMHW2_10vMHW2_25$pval < 0.05, ]
+#sig_Tenrichment_scoresMHW2_10vMHW2_25$contrast <- rep("MHW2_10vMHW2_25")
+#sig_Tenrichment_scoresMHW2_10vMHW2_25 <- sig_Tenrichment_scoresMHW2_10vMHW2_25[order(sig_Tenrichment_scoresMHW2_10vMHW2_25$pval), ]
+#top_15_esMHW2_10vMHW2_25 <- head(sig_Tenrichment_scoresMHW2_10vMHW2_25,15)
 #write.table(sig_Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"sig_Tenrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 ############################
 
 ##Create dataset with all enrichment scores
-combined_df_sig <- rbind(sig_Tenrichment_scoresCTL_10vMHW2_10,sig_Tenrichment_scoresCTL_25vMHW1_25,sig_Tenrichment_scoresCTL_25vMHW2_25,sig_Tenrichment_scoresMHW1_25vMHW2_25,sig_Tenrichment_scoresMHW2_10vMHW2_25)
-combined_df_top10 <- rbind(top_10_esCTL_10vMHW2_10, top_10_esCTL_25vMHW1_25, top_10_esCTL_25vMHW2_25, top_10_esMHW1_25vMHW2_25, top_10_esMHW2_10vMHW2_25)
+combined_df <- rbind(Tenrichment_scoresCTL_10vMHW2_10,Tenrichment_scoresCTL_25vMHW1_25,Tenrichment_scoresCTL_25vMHW2_25,Tenrichment_scoresMHW1_25vMHW2_25,Tenrichment_scoresMHW2_10vMHW2_25)
+combined_df_top5 <- rbind(top_5_esCTL_10vMHW2_10, top_5_esCTL_25vMHW1_25, top_5_esCTL_25vMHW2_25, top_5_esMHW1_25vMHW2_25, top_5_esMHW2_10vMHW2_25)
 combined_df$pathway <- sub("^\\(KEGG\\) ", "", combined_df$pathway)
 ###########################################
 
@@ -938,7 +960,7 @@ for(i in 1:length(contrasts)){
 ############
 
 #Dotplot
-dotplot(combined_df,pathDotplot)
+dotplot(combined_df_top5,pathDotplot)
 ########
 
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
