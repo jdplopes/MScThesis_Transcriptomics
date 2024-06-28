@@ -190,13 +190,18 @@ dotplot <- function (data,path) {
          color = "NES",
          fill = "NES") +  
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18),
+          axis.text.y = element_text(size = 18),
+          axis.title.x = element_text(size = 20),
+          axis.title.y = element_text(size = 20),  
           legend.position = "bottom",
+          legend.title = element_text(size = 20),
+          legend.text = element_text(size = 20),
           panel.grid.major = element_line(linewidth = 1.2, color = "grey90"),  
           panel.grid.minor = element_line(linewidth = 0.8, color = "grey90"),  
           panel.background = element_rect(fill = "grey", color = NA))  
-  ggsave(filename = paste(path, "Transcript_Dotplot_1.svg", sep = ""), plot = o, device = "svg", width = 15, height = 15)
-  ggsave(filename = paste(path, "Transcript_Dotplot_1.tiff", sep = ""), plot = o, device = "tiff", width = 15, height = 15)
+  ggsave(filename = paste(path, "Transcript_Dotplot_3.svg", sep = ""), plot = o, device = "svg", width = 15, height = 15)
+  ggsave(filename = paste(path, "Transcript_Dotplot_3.tiff", sep = ""), plot = o, device = "tiff", width = 15, height = 15)
 }
 
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
@@ -398,7 +403,9 @@ Blast_drerio <- subset(Blast_drerio, grepl("^TRINITY", Blast_drerio[,1]))
 Blast_drerio$ID<-unlist(sapply(Blast_drerio$TrinityID, function(x) unlist(strsplit(x, ".", fixed = TRUE))[1]))
 blast_drerio_trinity_merge<-merge(Blast_drerio,Counts, by = "ID")
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:16)]
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-c(1,2)]
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-c(1,2,4)]
+
+##Duplicate with higher mean
 w <- c()
 for (i in c(1:length(unique(blast_drerio_trinity_merge$Accession)))){
   dups <- which(blast_drerio_trinity_merge$Accession %in% unique(blast_drerio_trinity_merge$Accession)[i])
@@ -409,6 +416,14 @@ for (i in c(1:length(unique(blast_drerio_trinity_merge$Accession)))){
   w = c(w,dups[which(v == max(v))[1]])
 }
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[w,]
+############################
+
+#Mean of duplicates
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge %>%
+  group_by(Accession) %>%
+  summarize(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+###################
+
 #Full_blast_drerio<-merge(blast_drerio_trinity_merge, TxSEQ, by="ID")
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
@@ -863,7 +878,7 @@ Tenrichment_scoresCTL_10vMHW2_10 <- as.data.frame(enrichment_scoresCTL_10vMHW2_1
 Tenrichment_scoresCTL_10vMHW2_10$leadingEdge <- sapply(Tenrichment_scoresCTL_10vMHW2_10$leadingEdge, function(x) paste(x, collapse = ";"))
 Tenrichment_scoresCTL_10vMHW2_10 <- Tenrichment_scoresCTL_10vMHW2_10[order(Tenrichment_scoresCTL_10vMHW2_10$padj),]
 Tenrichment_scoresCTL_10vMHW2_10$contrast <- rep("CTL_10vMHW2_10")
-top_5_esCTL_10vMHW2_10 <- head(Tenrichment_scoresCTL_10vMHW2_10,5)
+top_10_esCTL_10vMHW2_10 <- head(Tenrichment_scoresCTL_10vMHW2_10,10)
 #write.table(Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
 #sig_Tenrichment_scoresCTL_10vMHW2_10 <- Tenrichment_scoresCTL_10vMHW2_10[Tenrichment_scoresCTL_10vMHW2_10$pval < 0.05, ]
 #sig_Tenrichment_scoresCTL_10vMHW2_10$contrast <- rep("CTL_10vMHW2_10")
@@ -876,7 +891,7 @@ Tenrichment_scoresCTL_25vMHW1_25 <- as.data.frame(enrichment_scoresCTL_25vMHW1_2
 Tenrichment_scoresCTL_25vMHW1_25$leadingEdge <- sapply(Tenrichment_scoresCTL_25vMHW1_25$leadingEdge, function(x) paste(x, collapse = ";"))
 Tenrichment_scoresCTL_25vMHW1_25 <- Tenrichment_scoresCTL_25vMHW1_25[order(Tenrichment_scoresCTL_25vMHW1_25$padj),]
 Tenrichment_scoresCTL_25vMHW1_25$contrast <- rep("CTL_25vMHW1_25")
-top_5_esCTL_25vMHW1_25 <- head(Tenrichment_scoresCTL_25vMHW1_25,5)
+top_10_esCTL_25vMHW1_25 <- head(Tenrichment_scoresCTL_25vMHW1_25,10)
 #write.table(Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
 #sig_Tenrichment_scoresCTL_25vMHW1_25 <- Tenrichment_scoresCTL_25vMHW1_25[Tenrichment_scoresCTL_25vMHW1_25$pval < 0.05, ]
 #sig_Tenrichment_scoresCTL_25vMHW1_25$contrast <- rep("CTL_25vMHW1_25")
@@ -889,7 +904,7 @@ Tenrichment_scoresCTL_25vMHW2_25 <- as.data.frame(enrichment_scoresCTL_25vMHW2_2
 Tenrichment_scoresCTL_25vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresCTL_25vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
 Tenrichment_scoresCTL_25vMHW2_25 <- Tenrichment_scoresCTL_25vMHW2_25[order(Tenrichment_scoresCTL_25vMHW2_25$padj),]
 Tenrichment_scoresCTL_25vMHW2_25$contrast <- rep("CTL_25vMHW2_25")
-top_5_esCTL_25vMHW2_25 <- head(Tenrichment_scoresCTL_25vMHW2_25,5)
+top_10_esCTL_25vMHW2_25 <- head(Tenrichment_scoresCTL_25vMHW2_25,10)
 #write.table(Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 #sig_Tenrichment_scoresCTL_25vMHW2_25 <- Tenrichment_scoresCTL_25vMHW2_25[Tenrichment_scoresCTL_25vMHW2_25$pval < 0.05, ]
 #sig_Tenrichment_scoresCTL_25vMHW2_25$contrast <- rep("CTL_25vMHW2_25")
@@ -902,7 +917,7 @@ Tenrichment_scoresMHW1_25vMHW2_25 <- as.data.frame(enrichment_scoresMHW1_25vMHW2
 Tenrichment_scoresMHW1_25vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresMHW1_25vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
 Tenrichment_scoresMHW1_25vMHW2_25 <- Tenrichment_scoresMHW1_25vMHW2_25[order(Tenrichment_scoresMHW1_25vMHW2_25$padj),]
 Tenrichment_scoresMHW1_25vMHW2_25$contrast <- rep("MHW1_25vMHW2_25")
-top_5_esMHW1_25vMHW2_25 <- head(Tenrichment_scoresMHW1_25vMHW2_25,5)
+top_10_esMHW1_25vMHW2_25 <- head(Tenrichment_scoresMHW1_25vMHW2_25,10)
 #write.table(Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"enrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 #sig_Tenrichment_scoresMHW1_25vMHW2_25 <- Tenrichment_scoresMHW1_25vMHW2_25[Tenrichment_scoresMHW1_25vMHW2_25$pval < 0.05, ]
 #sig_Tenrichment_scoresMHW1_25vMHW2_25$contrast <- rep("MHW1_25vMHW2_25")
@@ -915,7 +930,7 @@ Tenrichment_scoresMHW2_10vMHW2_25 <- as.data.frame(enrichment_scoresMHW2_10vMHW2
 Tenrichment_scoresMHW2_10vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresMHW2_10vMHW2_25$leadingEdge, function(x) paste(x, collapse = ";"))
 Tenrichment_scoresMHW2_10vMHW2_25 <- Tenrichment_scoresMHW2_10vMHW2_25[order(Tenrichment_scoresMHW2_10vMHW2_25$padj),]
 Tenrichment_scoresMHW2_10vMHW2_25$contrast <- rep("MHW2_10vMHW2_25")
-top_5_esMHW2_10vMHW2_25 <- head(Tenrichment_scoresMHW2_10vMHW2_25,5)
+top_10_esMHW2_10vMHW2_25 <- head(Tenrichment_scoresMHW2_10vMHW2_25,10)
 #write.table(Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"enrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 #sig_Tenrichment_scoresMHW2_10vMHW2_25 <- Tenrichment_scoresMHW2_10vMHW2_25[Tenrichment_scoresMHW2_10vMHW2_25$pval < 0.05, ]
 #sig_Tenrichment_scoresMHW2_10vMHW2_25$contrast <- rep("MHW2_10vMHW2_25")
@@ -926,8 +941,8 @@ top_5_esMHW2_10vMHW2_25 <- head(Tenrichment_scoresMHW2_10vMHW2_25,5)
 
 ##Create dataset with all enrichment scores
 combined_df <- rbind(Tenrichment_scoresCTL_10vMHW2_10,Tenrichment_scoresCTL_25vMHW1_25,Tenrichment_scoresCTL_25vMHW2_25,Tenrichment_scoresMHW1_25vMHW2_25,Tenrichment_scoresMHW2_10vMHW2_25)
-combined_df_top5 <- rbind(top_5_esCTL_10vMHW2_10, top_5_esCTL_25vMHW1_25, top_5_esCTL_25vMHW2_25, top_5_esMHW1_25vMHW2_25, top_5_esMHW2_10vMHW2_25)
-combined_df$pathway <- sub("^\\(KEGG\\) ", "", combined_df$pathway)
+combined_df_top10 <- rbind(top_10_esCTL_10vMHW2_10,top_10_esCTL_25vMHW1_25,top_10_esCTL_25vMHW2_25,top_10_esMHW1_25vMHW2_25,top_10_esMHW2_10vMHW2_25)
+combined_df_top10$pathway <- sub("^\\(KEGG\\) ", "", combined_df_top10$pathway)
 ###########################################
 
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
@@ -961,7 +976,7 @@ for(i in 1:length(contrasts)){
 ############
 
 #Dotplot
-dotplot(combined_df_top5,pathDotplot)
+dotplot(combined_df_top10,pathDotplot)
 ########
 
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
