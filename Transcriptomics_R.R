@@ -1,5 +1,6 @@
 ##Master's Thesis
 ##João Lopes
+set.seed(1)
 setwd("C:\\Users\\jdpl2\\OneDrive\\Ambiente de Trabalho\\Mestrado\\2º Ano\\Transcriptomics")
 
 ##Load a R package
@@ -194,8 +195,8 @@ dotplot <- function (data,path) {
           panel.grid.major = element_line(linewidth = 1.2, color = "grey90"),  
           panel.grid.minor = element_line(linewidth = 0.8, color = "grey90"),  
           panel.background = element_rect(fill = "grey", color = NA))  
-  ggsave(filename = paste(path, "Dotplot.svg", sep = ""), plot = o, device = "svg", width = 15, height = 15)
-  ggsave(filename = paste(path, "Dotplot.tiff", sep = ""), plot = o, device = "tiff", width = 15, height = 15)
+  ggsave(filename = paste(path, "Transcript_Dotplot_1.svg", sep = ""), plot = o, device = "svg", width = 15, height = 15)
+  ggsave(filename = paste(path, "Transcript_Dotplot_1.tiff", sep = ""), plot = o, device = "tiff", width = 15, height = 15)
 }
 
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
