@@ -95,7 +95,7 @@ volcanoPlot<-function(pathFiles_Trinity, colour, legend, title, contrast, i){
   points(DEG_trinity[which(DEG_trinity[contrast] == -1), paste("logFC-", contrast, sep = "")], -log10(DEG_trinity[which(DEG_trinity[contrast] == -1), paste("FDRp-", contrast, sep = "")]), pch = 20, cex = 1.5, col = colour[2,])
 }
 
-heatmapGraph<-function(colCutoff, rowCutoff, rowSideColors, data, path){
+heatmapGraph<-function(colCutoff, rowCutoff, data, path){
   heatData<-as.matrix(data[,c(2,6,10,14,18)])
   rownames(heatData)<-data$Description
   head(heatData)
@@ -200,8 +200,8 @@ dotplot <- function (data,path) {
           panel.grid.major = element_line(linewidth = 1.2, color = "grey90"),  
           panel.grid.minor = element_line(linewidth = 0.8, color = "grey90"),  
           panel.background = element_rect(fill = "grey", color = NA))  
-  ggsave(filename = paste(path, "Transcript_Dotplot_3.svg", sep = ""), plot = o, device = "svg", width = 15, height = 15)
-  ggsave(filename = paste(path, "Transcript_Dotplot_3.tiff", sep = ""), plot = o, device = "tiff", width = 15, height = 15)
+  ggsave(filename = paste(path, "Dotplot.svg", sep = ""), plot = o, device = "svg", width = 15, height = 15)
+  ggsave(filename = paste(path, "Dotplot.tiff", sep = ""), plot = o, device = "tiff", width = 15, height = 15)
 }
 
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
@@ -394,7 +394,6 @@ Full_blast<-merge(blast_trinity_merge, TxSEQ, by="ID")
 ##Create a matrix with  trinity ids, sequence and counts
 Full_trinity <- merge(TxSEQ,Counts, by = "ID")
 colnames(Full_trinity)<-c("ID", "sequence", sampleID)
-#write.table(Full_trinity, paste(pathDEGaux, "Full.csv", sep = ""), sep = ";", col.names = NA)
 ########################################################
 
 ##Create a materix with blast_drerio ids, sequence and counts
@@ -402,8 +401,8 @@ colnames(Blast_drerio) <- c("TrinityID","Accession", "%ID", "Aligment_Length", "
 Blast_drerio <- subset(Blast_drerio, grepl("^TRINITY", Blast_drerio[,1]))
 Blast_drerio$ID<-unlist(sapply(Blast_drerio$TrinityID, function(x) unlist(strsplit(x, ".", fixed = TRUE))[1]))
 blast_drerio_trinity_merge<-merge(Blast_drerio,Counts, by = "ID")
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -(4:16)]
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge[,-c(1,2,4)]
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -c(1,2,4:16)]
+sum(duplicated(blast_drerio_trinity_merge$Accession))
 
 ##Duplicate with higher mean
 w <- c()
@@ -418,13 +417,6 @@ for (i in c(1:length(unique(blast_drerio_trinity_merge$Accession)))){
 blast_drerio_trinity_merge <- blast_drerio_trinity_merge[w,]
 ############################
 
-#Mean of duplicates
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge %>%
-  group_by(Accession) %>%
-  summarize(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
-###################
-
-#Full_blast_drerio<-merge(blast_drerio_trinity_merge, TxSEQ, by="ID")
 #ΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛΛ#
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 ####################Merge the counts with the respective cDNA sequence#################
@@ -879,12 +871,7 @@ Tenrichment_scoresCTL_10vMHW2_10$leadingEdge <- sapply(Tenrichment_scoresCTL_10v
 Tenrichment_scoresCTL_10vMHW2_10 <- Tenrichment_scoresCTL_10vMHW2_10[order(Tenrichment_scoresCTL_10vMHW2_10$padj),]
 Tenrichment_scoresCTL_10vMHW2_10$contrast <- rep("CTL_10vMHW2_10")
 top_10_esCTL_10vMHW2_10 <- head(Tenrichment_scoresCTL_10vMHW2_10,10)
-#write.table(Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
-#sig_Tenrichment_scoresCTL_10vMHW2_10 <- Tenrichment_scoresCTL_10vMHW2_10[Tenrichment_scoresCTL_10vMHW2_10$pval < 0.05, ]
-#sig_Tenrichment_scoresCTL_10vMHW2_10$contrast <- rep("CTL_10vMHW2_10")
-#sig_Tenrichment_scoresCTL_10vMHW2_10 <- sig_Tenrichment_scoresCTL_10vMHW2_10[order(sig_Tenrichment_scoresCTL_10vMHW2_10$pval), ]
-#top_15_esCTL_10vMHW2_10 <- head(sig_Tenrichment_scoresCTL_10vMHW2_10,15)
-#write.table(sig_Tenrichment_scoresCTL_10vMHW2_10,paste(pathTables,"sig_enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
+write.table(top_10_esCTL_10vMHW2_10,paste(pathTables_BDreio,"top10_enrichment_scoresCTL_10vMHW2_10.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresCTL_25vMHW1_25 <- multiGSEA(pathways,odataCTL_25vMHW1_25)
 Tenrichment_scoresCTL_25vMHW1_25 <- as.data.frame(enrichment_scoresCTL_25vMHW1_25$transcriptome)
@@ -892,12 +879,7 @@ Tenrichment_scoresCTL_25vMHW1_25$leadingEdge <- sapply(Tenrichment_scoresCTL_25v
 Tenrichment_scoresCTL_25vMHW1_25 <- Tenrichment_scoresCTL_25vMHW1_25[order(Tenrichment_scoresCTL_25vMHW1_25$padj),]
 Tenrichment_scoresCTL_25vMHW1_25$contrast <- rep("CTL_25vMHW1_25")
 top_10_esCTL_25vMHW1_25 <- head(Tenrichment_scoresCTL_25vMHW1_25,10)
-#write.table(Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
-#sig_Tenrichment_scoresCTL_25vMHW1_25 <- Tenrichment_scoresCTL_25vMHW1_25[Tenrichment_scoresCTL_25vMHW1_25$pval < 0.05, ]
-#sig_Tenrichment_scoresCTL_25vMHW1_25$contrast <- rep("CTL_25vMHW1_25")
-#sig_Tenrichment_scoresCTL_25vMHW1_25 <- sig_Tenrichment_scoresCTL_25vMHW1_25[order(sig_Tenrichment_scoresCTL_25vMHW1_25$pval), ]
-#top_15_esCTL_25vMHW1_25 <- head(sig_Tenrichment_scoresCTL_25vMHW1_25,15)
-#write.table(sig_Tenrichment_scoresCTL_25vMHW1_25,paste(pathTables,"sig_enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
+write.table(top_10_esCTL_25vMHW1_25,paste(pathTables_BDreio,"top10_enrichment_scoresCTL_25vMHW1_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresCTL_25vMHW2_25 <- multiGSEA(pathways,odataCTL_25vMHW2_25)
 Tenrichment_scoresCTL_25vMHW2_25 <- as.data.frame(enrichment_scoresCTL_25vMHW2_25$transcriptome)
@@ -905,12 +887,7 @@ Tenrichment_scoresCTL_25vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresCTL_25v
 Tenrichment_scoresCTL_25vMHW2_25 <- Tenrichment_scoresCTL_25vMHW2_25[order(Tenrichment_scoresCTL_25vMHW2_25$padj),]
 Tenrichment_scoresCTL_25vMHW2_25$contrast <- rep("CTL_25vMHW2_25")
 top_10_esCTL_25vMHW2_25 <- head(Tenrichment_scoresCTL_25vMHW2_25,10)
-#write.table(Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
-#sig_Tenrichment_scoresCTL_25vMHW2_25 <- Tenrichment_scoresCTL_25vMHW2_25[Tenrichment_scoresCTL_25vMHW2_25$pval < 0.05, ]
-#sig_Tenrichment_scoresCTL_25vMHW2_25$contrast <- rep("CTL_25vMHW2_25")
-#sig_Tenrichment_scoresCTL_25vMHW2_25 <- sig_Tenrichment_scoresCTL_25vMHW2_25[order(sig_Tenrichment_scoresCTL_25vMHW2_25$pval), ]
-#top_15_esCTL_25vMHW2_25 <- head(sig_Tenrichment_scoresCTL_25vMHW2_25,15)
-#write.table(sig_Tenrichment_scoresCTL_25vMHW2_25,paste(pathTables,"sig_enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+write.table(top_10_esCTL_25vMHW2_25,paste(pathTables_BDreio,"top10_enrichment_scoresCTL_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresMHW1_25vMHW2_25 <- multiGSEA(pathways,odataMHW1_25vMHW2_25)
 Tenrichment_scoresMHW1_25vMHW2_25 <- as.data.frame(enrichment_scoresMHW1_25vMHW2_25$transcriptome)
@@ -918,12 +895,7 @@ Tenrichment_scoresMHW1_25vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresMHW1_2
 Tenrichment_scoresMHW1_25vMHW2_25 <- Tenrichment_scoresMHW1_25vMHW2_25[order(Tenrichment_scoresMHW1_25vMHW2_25$padj),]
 Tenrichment_scoresMHW1_25vMHW2_25$contrast <- rep("MHW1_25vMHW2_25")
 top_10_esMHW1_25vMHW2_25 <- head(Tenrichment_scoresMHW1_25vMHW2_25,10)
-#write.table(Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"enrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
-#sig_Tenrichment_scoresMHW1_25vMHW2_25 <- Tenrichment_scoresMHW1_25vMHW2_25[Tenrichment_scoresMHW1_25vMHW2_25$pval < 0.05, ]
-#sig_Tenrichment_scoresMHW1_25vMHW2_25$contrast <- rep("MHW1_25vMHW2_25")
-#sig_Tenrichment_scoresMHW1_25vMHW2_25 <- sig_Tenrichment_scoresMHW1_25vMHW2_25[order(sig_Tenrichment_scoresMHW1_25vMHW2_25$pval), ]
-#top_15_esMHW1_25vMHW2_25 <- head(sig_Tenrichment_scoresMHW1_25vMHW2_25,15)
-#write.table(sig_Tenrichment_scoresMHW1_25vMHW2_25,paste(pathTables,"sig_Tenrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+write.table(top_10_esMHW1_25vMHW2_25,paste(pathTables_BDreio,"top10_enrichment_scoresMHW1_25vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 
 enrichment_scoresMHW2_10vMHW2_25 <- multiGSEA(pathways,odataMHW2_10vMHW2_25)
 Tenrichment_scoresMHW2_10vMHW2_25 <- as.data.frame(enrichment_scoresMHW2_10vMHW2_25$transcriptome)
@@ -931,12 +903,7 @@ Tenrichment_scoresMHW2_10vMHW2_25$leadingEdge <- sapply(Tenrichment_scoresMHW2_1
 Tenrichment_scoresMHW2_10vMHW2_25 <- Tenrichment_scoresMHW2_10vMHW2_25[order(Tenrichment_scoresMHW2_10vMHW2_25$padj),]
 Tenrichment_scoresMHW2_10vMHW2_25$contrast <- rep("MHW2_10vMHW2_25")
 top_10_esMHW2_10vMHW2_25 <- head(Tenrichment_scoresMHW2_10vMHW2_25,10)
-#write.table(Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"enrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
-#sig_Tenrichment_scoresMHW2_10vMHW2_25 <- Tenrichment_scoresMHW2_10vMHW2_25[Tenrichment_scoresMHW2_10vMHW2_25$pval < 0.05, ]
-#sig_Tenrichment_scoresMHW2_10vMHW2_25$contrast <- rep("MHW2_10vMHW2_25")
-#sig_Tenrichment_scoresMHW2_10vMHW2_25 <- sig_Tenrichment_scoresMHW2_10vMHW2_25[order(sig_Tenrichment_scoresMHW2_10vMHW2_25$pval), ]
-#top_15_esMHW2_10vMHW2_25 <- head(sig_Tenrichment_scoresMHW2_10vMHW2_25,15)
-#write.table(sig_Tenrichment_scoresMHW2_10vMHW2_25,paste(pathTables,"sig_Tenrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
+write.table(top_10_esMHW2_10vMHW2_25,paste(pathTables_BDreio,"top10_enrichment_scoresMHW2_10vMHW2_25.csv",sep=""),sep=";",row.names = FALSE)
 ############################
 
 ##Create dataset with all enrichment scores
@@ -964,8 +931,8 @@ for(i in 1:length(contrasts)){
 ##############
 
 ##Heatmap
-heatmapGraph(100, 20, rowSideColors,degTable_trinity,pathHeatmap_Trinity)
-heatmapGraph(60,24,rowSideColors,degTable_blast_drerio,pathHeatmap_BSwiss)
+heatmapGraph(100, 20,degTable_trinity,pathHeatmap_Trinity)
+heatmapGraph(60,24,degTable_blast_drerio,pathHeatmap_BSwiss)
 #########
 
 ##Pie charts
