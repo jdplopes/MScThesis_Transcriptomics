@@ -4,28 +4,19 @@ set.seed(1)
 setwd("C:\\Users\\jdpl2\\OneDrive\\Ambiente de Trabalho\\Mestrado\\2º Ano\\Transcriptomics")
 
 ##Load a R package
-library(tximport)
 library(limma)
 library(edgeR)
-library(seqinr)
-#library(UniprotR)
 library(ggplot2)
-library(cowplot)
 library(gplots)
 library(RColorBrewer)
-library(gridGraphics)
-#library(biomaRt) #Do not use for analyzing DEGs (problems with the getSequence function)
-library(carData)
-library(car)
-library(rhdf5)
+library(seqinr)
 library(data.table)
-library(multiGSEA)
 library(tidyverse)
+library(tximport)
 library(readxl)
 library(tidyr)
-library(forcats)
+library(multiGSEA)
 windowsFonts(Calibri = windowsFont("Arial"))
-
 
 ##Create folders
 dir.create("Blast_Drerio")
@@ -84,15 +75,15 @@ relativeExpression<-function(treatment1, treatment2, Design, fit){
 volcanoPlot<-function(pathFiles_Trinity, colour, legend, title, contrast, i){
   load(paste(pathFiles_Trinity, "lrt.RData", sep = ""))
   print(colnames(DEG_trinity))
-  signif<--log10(DEG_trinity[,paste("FDRp-", contrast, sep = "")])
+  signif<--log10(DEG_trinity[,paste("Pvalue-", contrast, sep = "")])
   plot(DEG_trinity[,paste("logFC-", contrast, sep = "")], signif, pch = ".", xlab = expression(log[2] * FC), ylab = expression(log[10] * FDR), main = NULL, 
        panel.first={
          points(0, 0, pch = 16, cex = 1e6, col = "grey95")
          grid(col = "white", lty = 1)
        }
   )
-  points(DEG_trinity[which(DEG_trinity[contrast] == 1), paste("logFC-", contrast, sep = "")], -log10(DEG_trinity[which(DEG_trinity[contrast] == 1), paste("FDRp-", contrast, sep = "")]), pch = 20, cex = 1.5, col = colour[1,])
-  points(DEG_trinity[which(DEG_trinity[contrast] == -1), paste("logFC-", contrast, sep = "")], -log10(DEG_trinity[which(DEG_trinity[contrast] == -1), paste("FDRp-", contrast, sep = "")]), pch = 20, cex = 1.5, col = colour[2,])
+  points(DEG_trinity[which(DEG_trinity[contrast] == 1), paste("logFC-", contrast, sep = "")], -log10(DEG_trinity[which(DEG_trinity[contrast] == 1), paste("Pvalue-", contrast, sep = "")]), pch = 20, cex = 1.5, col = colour[1,])
+  points(DEG_trinity[which(DEG_trinity[contrast] == -1), paste("logFC-", contrast, sep = "")], -log10(DEG_trinity[which(DEG_trinity[contrast] == -1), paste("Pvalue-", contrast, sep = "")]), pch = 20, cex = 1.5, col = colour[2,])
 }
 
 heatmapGraph<-function(colCutoff, rowCutoff, data, path){
@@ -367,7 +358,7 @@ print(head(Tsv$counts))
 print(dim(Tsv$counts))
 print(colnames(Tsv$counts))
 ######################################################
-
+  
 ##Read the fasta file to get the ids and sequences
 Fa<-read.fasta(Trinityfile, as.string = TRUE)
 print(head(Fa))
@@ -387,8 +378,10 @@ colnames(Blast) <- c("TrinityID","Accession", "%ID", "Aligment_Length", "Mismatc
 Blast <- subset(Blast, grepl("^TRINITY", Blast[,1]))
 Blast$ID<-unlist(sapply(Blast$TrinityID, function(x) unlist(strsplit(x, ".", fixed = TRUE))[1]))
 blast_trinity_merge<-merge(Blast,Counts, by = "ID")
-blast_trinity_merge <- blast_trinity_merge[, -(2:16)]
+blast_trinity_merge <- blast_trinity_merge[, -c(2,4:17)]
+blast_trinity_merge$Accession <- str_extract(blast_trinity_merge$Accession, "(?<=\\|)[^|]+(?=\\|)")
 Full_blast<-merge(blast_trinity_merge, TxSEQ, by="ID")
+write.table(Full_blast, paste(pathBothOmicsPathways, "genes_ID.csv", sep = ""),sep = ";",col.names = TRUE, row.names = FALSE)
 ######################################################
 
 ##Create a matrix with  trinity ids, sequence and counts
@@ -401,7 +394,7 @@ colnames(Blast_drerio) <- c("TrinityID","Accession", "%ID", "Aligment_Length", "
 Blast_drerio <- subset(Blast_drerio, grepl("^TRINITY", Blast_drerio[,1]))
 Blast_drerio$ID<-unlist(sapply(Blast_drerio$TrinityID, function(x) unlist(strsplit(x, ".", fixed = TRUE))[1]))
 blast_drerio_trinity_merge<-merge(Blast_drerio,Counts, by = "ID")
-blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -c(1,2,4:16)]
+blast_drerio_trinity_merge <- blast_drerio_trinity_merge[, -c(1,2,4:17)]
 sum(duplicated(blast_drerio_trinity_merge$Accession))
 
 ##Duplicate with higher mean
@@ -545,9 +538,9 @@ write.table(deg_per_treatment_trinity,paste(pathTables_Trinity,"DEG_per_treatmen
 
 ##Create a DGEList object from a table of counts 
 Data_blast <-
-  DGEList(counts = Full_blast[, 2:16],
+  DGEList(counts = Full_blast[, 3:17],
           group = Levels,
-          genes = Full_blast[, 1])
+          genes = Full_blast[, 2])
 ################################################
 
 ##Filter out lowly expressed genes
@@ -612,7 +605,7 @@ DEG_blast<-cbind(Results_blast,expressionTable_blast)
 degTable_blast<-DEG_blast[which(abs(DEG_blast$CTL_10vMHW2_10) == 1 | abs(DEG_blast$MHW2_10vMHW2_25) == 1 | abs(DEG_blast$CTL_25vMHW1_25) == 1 | abs(DEG_blast$CTL_25vMHW2_25) == 1 | abs(DEG_blast$MHW1_25vMHW2_25) == 1),]
 head(degTable_blast)
 nrow(degTable_blast)
-write.table(degTable_blast,paste(pathFiles_BSwiss,"DEG.csv",sep =""),sep=";",col.names=NA)
+write.table(degTable_blast,paste(pathBothOmicsPathways,"DEG.csv",sep =""),sep=";",col.names=NA)
 save(CTL_10vMHW2_10_blast, MHW2_10vMHW2_25_blast, CTL_25vMHW1_25_blast, CTL_25vMHW2_25_blast, MHW1_25vMHW2_25_blast, file = "Blast_SwissProt\\Files\\lrt.RData")
 #######################################
 
